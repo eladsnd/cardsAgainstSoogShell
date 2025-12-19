@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Creator - Cards Against Soog</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .creator-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .creator-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 1rem;
+            color: var(--accent-purple);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .back-link:hover {
+            color: var(--accent-pink);
+        }
+
+        .card-section {
+            background: var(--bg-glass);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card-section h2 {
+            color: var(--text-light);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-type-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .card-type-badge.black {
+            background: var(--card-black);
+            color: white;
+        }
+
+        .card-type-badge.white {
+            background: var(--card-white);
+            color: #1e1e1e;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            align-items: center;
+        }
+
+        .input-row input {
+            flex: 1;
+        }
+
+        .input-row button {
+            width: auto;
+            padding: 0.75rem 1.5rem;
+            margin: 0;
+        }
+
+        .card-list {
+            margin-top: 1.5rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .card-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .card-item-text {
+            flex: 1;
+            color: var(--text-light);
+        }
+
+        .delete-btn {
+            background: var(--error);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .delete-btn:hover {
+            background: #dc2626;
+            transform: scale(1.05);
+        }
+
+        .export-section {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .export-btn {
+            background: var(--success);
+        }
+
+        .copy-btn {
+            background: var(--accent-blue);
+        }
+
+        .instruction-box {
+            background: rgba(59, 130, 246, 0.1);
+            border: 2px solid var(--accent-blue);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .instruction-box h3 {
+            color: var(--accent-blue);
+            margin-bottom: 0.5rem;
+        }
+
+        .instruction-box p {
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            line-height: 1.6;
+        }
+
+        .count-badge {
+            background: rgba(168, 85, 247, 0.2);
+            color: var(--accent-purple);
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="creator-container">
+        <div class="creator-header">
+            <a href="/" class="back-link">← Back to Game</a>
+            <h1 class="logo">Card Creator</h1>
+            <p class="subtitle">Add your own custom cards!</p>
+        </div>
+
+        <div class="instruction-box">
+            <h3>💡 How to Use</h3>
+            <p>1. Add your custom black cards (questions) and white cards (answers) below</p>
+            <p>2. Click "Copy to Clipboard" to copy all your cards as code</p>
+            <p>3. Open <code>cards-data.js</code> in your project and paste the cards into the respective arrays</p>
+            <p>4. Restart the server to see your new cards in the game!</p>
+        </div>
+
+        <!-- Black Cards Section -->
+        <div class="card-section">
+            <h2>
+                <span class="card-type-badge black">BLACK</span>
+                Question Cards
+                <span class="count-badge" id="blackCount">0 cards</span>
+            </h2>
+
+            <div class="input-row">
+                <input type="text" id="blackCardInput" placeholder="Enter a question (use _____ for blanks)"
+                    maxlength="200">
+                <button id="addBlackBtn">Add Question</button>
+            </div>
+
+            <div class="card-list" id="blackCardList"></div>
+        </div>
+
+        <!-- White Cards Section -->
+        <div class="card-section">
+            <h2>
+                <span class="card-type-badge white">WHITE</span>
+                Answer Cards
+                <span class="count-badge" id="whiteCount">0 cards</span>
+            </h2>
+
+            <div class="input-row">
+                <input type="text" id="whiteCardInput" placeholder="Enter a funny answer" maxlength="100">
+                <button id="addWhiteBtn">Add Answer</button>
+            </div>
+
+            <div class="card-list" id="whiteCardList"></div>
+        </div>
+
+        <!-- Export Section -->
+        <div class="export-section">
+            <button id="copyBtn" class="copy-btn">📋 Copy to Clipboard</button>
+            <button id="downloadBtn" class="export-btn">💾 Download cards-data.js</button>
+        </div>
+
+        <div id="successMessage" class="status-message success-message" style="display: none; margin-top: 1rem;">
+            Cards copied to clipboard! Now paste them into cards-data.js
+        </div>
+    </div>
+
+    <script>
+        let blackCards = [];
+        let whiteCards = [];
+        let blackIdCounter = 1000; // Start from 1000 to avoid conflicts
+        let whiteIdCounter = 1000;
+
+        const blackCardInput = document.getElementById('blackCardInput');
+        const whiteCardInput = document.getElementById('whiteCardInput');
+        const addBlackBtn = document.getElementById('addBlackBtn');
+        const addWhiteBtn = document.getElementById('addWhiteBtn');
+        const blackCardList = document.getElementById('blackCardList');
+        const whiteCardList = document.getElementById('whiteCardList');
+        const blackCount = document.getElementById('blackCount');
+        const whiteCount = document.getElementById('whiteCount');
+        const copyBtn = document.getElementById('copyBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const successMessage = document.getElementById('successMessage');
+
+        // Add black card
+        addBlackBtn.addEventListener('click', () => {
+            const text = blackCardInput.value.trim();
+            if (!text) return;
+
+            const blanks = (text.match(/_____/g) || []).length;
+            const card = {
+                id: blackIdCounter++,
+                text: text,
+                pick: blanks > 0 ? blanks : 1
+            };
+
+            blackCards.push(card);
+            blackCardInput.value = '';
+            renderBlackCards();
+        });
+
+        // Add white card
+        addWhiteBtn.addEventListener('click', () => {
+            const text = whiteCardInput.value.trim();
+            if (!text) return;
+
+            const card = {
+                id: whiteIdCounter++,
+                text: text
+            };
+
+            whiteCards.push(card);
+            whiteCardInput.value = '';
+            renderWhiteCards();
+        });
+
+        // Allow Enter key
+        blackCardInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addBlackBtn.click();
+        });
+
+        whiteCardInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addWhiteBtn.click();
+        });
+
+        function renderBlackCards() {
+            blackCardList.innerHTML = '';
+            blackCount.textContent = `${blackCards.length} cards`;
+
+            blackCards.forEach((card, index) => {
+                const item = document.createElement('div');
+                item.className = 'card-item';
+                item.innerHTML = `
+          <div class="card-item-text">${card.text} ${card.pick > 1 ? `(Pick ${card.pick})` : ''}</div>
+          <button class="delete-btn" onclick="deleteBlackCard(${index})">Delete</button>
+        `;
+                blackCardList.appendChild(item);
+            });
+        }
+
+        function renderWhiteCards() {
+            whiteCardList.innerHTML = '';
+            whiteCount.textContent = `${whiteCards.length} cards`;
+
+            whiteCards.forEach((card, index) => {
+                const item = document.createElement('div');
+                item.className = 'card-item';
+                item.innerHTML = `
+          <div class="card-item-text">${card.text}</div>
+          <button class="delete-btn" onclick="deleteWhiteCard(${index})">Delete</button>
+        `;
+                whiteCardList.appendChild(item);
+            });
+        }
+
+        window.deleteBlackCard = (index) => {
+            blackCards.splice(index, 1);
+            renderBlackCards();
+        };
+
+        window.deleteWhiteCard = (index) => {
+            whiteCards.splice(index, 1);
+            renderWhiteCards();
+        };
+
+        // Generate code to copy
+        copyBtn.addEventListener('click', async () => {
+            const code = generateCode();
+
+            try {
+                await navigator.clipboard.writeText(code);
+                successMessage.style.display = 'block';
+                setTimeout(() => {
+                    successMessage.style.display = 'none';
+                }, 3000);
+            } catch (err) {
+                alert('Failed to copy. Please copy manually:\n\n' + code);
+            }
+        });
+
+        // Download cards-data.js
+        downloadBtn.addEventListener('click', () => {
+            const fullCode = generateFullFile();
+            const blob = new Blob([fullCode], { type: 'text/javascript' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'cards-data.js';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        function generateCode() {
+            let code = '// YOUR CUSTOM BLACK CARDS (add these to the blackCards array in cards-data.js)\n';
+            blackCards.forEach(card => {
+                code += `  { id: ${card.id}, text: "${card.text}", pick: ${card.pick} },\n`;
+            });
+
+            code += '\n// YOUR CUSTOM WHITE CARDS (add these to the whiteCards array in cards-data.js)\n';
+            whiteCards.forEach(card => {
+                code += `  { id: ${card.id}, text: "${card.text}" },\n`;
+            });
+
+            return code;
+        }
+
+        function generateFullFile() {
+            return `// Card database for the game
+
+const blackCards = [
+${blackCards.map(card => `  { id: ${card.id}, text: "${card.text}", pick: ${card.pick} }`).join(',\n')}
+];
+
+const whiteCards = [
+${whiteCards.map(card => `  { id: ${card.id}, text: "${card.text}" }`).join(',\n')}
+];
+
+function shuffleArray(array) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+module.exports = {
+  blackCards,
+  whiteCards,
+  shuffleArray,
+};
+`;
+        }
+    </script>
+</body>
+
+</html>
