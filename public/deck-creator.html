@@ -252,8 +252,7 @@
 
     <script src="deck-storage.js"></script>
     <script>
-        // Deck storage using localStorage
-        const STORAGE_KEY = 'cardsAgainstSoogDecks';
+        // Deck storage using Server API via DeckStorage global
 
         let currentDeckId = 'default';
         let decks = {};
@@ -275,36 +274,42 @@
         const successMessage = document.getElementById('successMessage');
 
         // Initialize
-        loadDecks();
-        renderDeckSelector();
-        loadCurrentDeck();
+        init();
+
+        async function init() {
+            await loadDecks();
+            renderDeckSelector();
+            loadCurrentDeck();
+        }
 
         // Deck management functions
-        function loadDecks() {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                decks = JSON.parse(saved);
-            } else {
-                // Create default deck
-                decks = {
-                    'default': {
-                        name: 'Default Deck',
-                        blackCards: [],
-                        whiteCards: [],
-                        createdAt: Date.now()
-                    }
-                };
-                saveDecks();
+        async function loadDecks() {
+            decks = await DeckStorage.getAllDecks();
+
+            // Ensure default deck exists if empty (server might return empty object initially)
+            if (Object.keys(decks).length === 0) {
+                // We don't auto-create default deck on server to avoid clutter, 
+                // but for UI we can handle empty state or create one if user wants.
+                // For now, let's just handle empty state gracefully.
             }
         }
 
-        function saveDecks() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(decks));
-            showSuccess();
+        async function saveCurrentDeck() {
+            if (!decks[currentDeckId]) return;
+            const success = await DeckStorage.saveDeck(currentDeckId, decks[currentDeckId]);
+            if (success) showSuccess();
         }
 
         function renderDeckSelector() {
             deckSelect.innerHTML = '';
+
+            if (Object.keys(decks).length === 0) {
+                const option = document.createElement('option');
+                option.text = "No decks found";
+                deckSelect.appendChild(option);
+                return;
+            }
+
             Object.keys(decks).forEach(id => {
                 const option = document.createElement('option');
                 option.value = id;
@@ -316,7 +321,13 @@
 
         function loadCurrentDeck() {
             const deck = decks[currentDeckId];
-            if (!deck) return;
+            if (!deck) {
+                blackCardList.innerHTML = '';
+                whiteCardList.innerHTML = '';
+                blackCount.textContent = '0 cards';
+                whiteCount.textContent = '0 cards';
+                return;
+            }
 
             renderBlackCards();
             renderWhiteCards();
@@ -329,6 +340,8 @@
         // Card rendering
         function renderBlackCards() {
             const deck = getCurrentDeck();
+            if (!deck) return;
+
             blackCardList.innerHTML = '';
             blackCount.textContent = `${deck.blackCards.length} cards`;
 
@@ -345,6 +358,8 @@
 
         function renderWhiteCards() {
             const deck = getCurrentDeck();
+            if (!deck) return;
+
             whiteCardList.innerHTML = '';
             whiteCount.textContent = `${deck.whiteCards.length} cards`;
 
@@ -360,9 +375,14 @@
         }
 
         // Add cards
-        addBlackBtn.addEventListener('click', () => {
+        addBlackBtn.addEventListener('click', async () => {
             const text = blackCardInput.value.trim();
             if (!text) return;
+
+            if (!getCurrentDeck()) {
+                alert('Please create a deck first!');
+                return;
+            }
 
             const blanks = (text.match(/_____/g) || []).length;
             const card = {
@@ -373,14 +393,19 @@
 
             getCurrentDeck().blackCards.push(card);
             blackCardInput.value = '';
-            saveDecks();
+            await saveCurrentDeck();
             renderBlackCards();
             renderDeckSelector();
         });
 
-        addWhiteBtn.addEventListener('click', () => {
+        addWhiteBtn.addEventListener('click', async () => {
             const text = whiteCardInput.value.trim();
             if (!text) return;
+
+            if (!getCurrentDeck()) {
+                alert('Please create a deck first!');
+                return;
+            }
 
             const card = {
                 id: Date.now(),
@@ -389,22 +414,22 @@
 
             getCurrentDeck().whiteCards.push(card);
             whiteCardInput.value = '';
-            saveDecks();
+            await saveCurrentDeck();
             renderWhiteCards();
             renderDeckSelector();
         });
 
         // Delete cards
-        window.deleteBlackCard = (index) => {
+        window.deleteBlackCard = async (index) => {
             getCurrentDeck().blackCards.splice(index, 1);
-            saveDecks();
+            await saveCurrentDeck();
             renderBlackCards();
             renderDeckSelector();
         };
 
-        window.deleteWhiteCard = (index) => {
+        window.deleteWhiteCard = async (index) => {
             getCurrentDeck().whiteCards.splice(index, 1);
-            saveDecks();
+            await saveCurrentDeck();
             renderWhiteCards();
             renderDeckSelector();
         };
@@ -415,7 +440,7 @@
             loadCurrentDeck();
         });
 
-        newDeckBtn.addEventListener('click', () => {
+        newDeckBtn.addEventListener('click', async () => {
             const name = prompt('Enter deck name:');
             if (!name) return;
 
@@ -428,37 +453,46 @@
             };
 
             currentDeckId = id;
-            saveDecks();
+            await saveCurrentDeck();
             renderDeckSelector();
             loadCurrentDeck();
         });
 
-        renameDeckBtn.addEventListener('click', () => {
+        renameDeckBtn.addEventListener('click', async () => {
+            if (!getCurrentDeck()) return;
+
             const newName = prompt('Enter new name:', getCurrentDeck().name);
             if (!newName) return;
 
             getCurrentDeck().name = newName;
-            saveDecks();
+            await saveCurrentDeck();
             renderDeckSelector();
         });
 
-        deleteDeckBtn.addEventListener('click', () => {
-            if (currentDeckId === 'default') {
-                alert('Cannot delete the default deck!');
-                return;
-            }
+        deleteDeckBtn.addEventListener('click', async () => {
+            if (!getCurrentDeck()) return;
 
             if (!confirm(`Delete deck "${getCurrentDeck().name}"?`)) return;
 
+            await DeckStorage.deleteDeck(currentDeckId);
             delete decks[currentDeckId];
-            currentDeckId = 'default';
-            saveDecks();
+
+            // Select another deck or reset
+            const remainingIds = Object.keys(decks);
+            if (remainingIds.length > 0) {
+                currentDeckId = remainingIds[0];
+            } else {
+                currentDeckId = null;
+            }
+
             renderDeckSelector();
             loadCurrentDeck();
         });
 
         exportDeckBtn.addEventListener('click', () => {
             const deck = getCurrentDeck();
+            if (!deck) return;
+
             const data = JSON.stringify(deck, null, 2);
             const blob = new Blob([data], { type: 'application/json' });
             const url = URL.createObjectURL(blob);

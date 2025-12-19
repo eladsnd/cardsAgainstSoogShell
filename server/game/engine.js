@@ -1,4 +1,4 @@
-const { blackCards, whiteCards, shuffleArray } = require('../../cards-data');
+const { packs, shuffleArray } = require('../../cards-data');
 const config = require('../../config');
 
 /**
@@ -14,8 +14,9 @@ class GameEngine {
         this.currentCzarId = null;
         this.submissions = new Map(); // playerId -> whiteCardIds
         this.roundWinner = null;
-        this.blackCardDeck = shuffleArray(blackCards);
-        this.whiteCardDeck = shuffleArray(whiteCards);
+        this.selectedPacks = ['base']; // Default to base pack
+        this.blackCardDeck = [];
+        this.whiteCardDeck = [];
         this.discardedWhiteCards = [];
         this.currentRound = 0;
         this.phase = 'lobby'; // lobby, playing, judging, roundEnd
@@ -47,10 +48,41 @@ class GameEngine {
         return false;
     }
 
-    startGame() {
+    startGame(packIds = []) {
         if (this.players.length < config.MIN_PLAYERS) {
             return { success: false, message: `Need at least ${config.MIN_PLAYERS} players to start` };
         }
+
+        // Use provided packs or fall back to current selection or base
+        const packsToUse = packIds.length > 0 ? packIds : (this.selectedPacks.length > 0 ? this.selectedPacks : ['base']);
+        this.selectedPacks = packsToUse;
+
+        // Filter and merge cards
+        let allBlackCards = [];
+        let allWhiteCards = [];
+
+        // 1. Built-in packs
+        const builtInPacks = packs.filter(p => packsToUse.includes(p.id));
+        builtInPacks.forEach(pack => {
+            allBlackCards = [...allBlackCards, ...pack.black];
+            allWhiteCards = [...allWhiteCards, ...pack.white];
+        });
+
+        // 2. Custom decks
+        const customDecks = require('./deck-manager').getAll();
+        packsToUse.forEach(id => {
+            if (customDecks[id]) {
+                allBlackCards = [...allBlackCards, ...customDecks[id].blackCards];
+                allWhiteCards = [...allWhiteCards, ...customDecks[id].whiteCards];
+            }
+        });
+
+        if (allBlackCards.length === 0 || allWhiteCards.length === 0) {
+            return { success: false, message: 'No cards in selected packs' };
+        }
+
+        this.blackCardDeck = shuffleArray(allBlackCards);
+        this.whiteCardDeck = shuffleArray(allWhiteCards);
 
         this.gameStarted = true;
         this.currentRound = 0;
@@ -203,7 +235,10 @@ class GameEngine {
             phase: this.phase,
             currentRound: this.currentRound,
             roundWinner: this.roundWinner,
+            roundWinner: this.roundWinner,
             submissionCount: this.submissions.size,
+            selectedPacks: this.selectedPacks,
+            availablePacks: this.getAvailablePacks()
         };
     }
 
@@ -223,6 +258,27 @@ class GameEngine {
         });
         // Shuffle so czar can't guess based on order
         return shuffleArray(submissions);
+    }
+
+    getAvailablePacks() {
+        const builtInPacks = packs.map(p => ({ id: p.id, name: p.name }));
+
+        // Add custom decks
+        const customDecks = require('./deck-manager').getAll();
+        const customPackList = Object.keys(customDecks).map(id => ({
+            id: id,
+            name: customDecks[id].name + ' (Custom)',
+            isCustom: true
+        }));
+
+        return [...builtInPacks, ...customPackList];
+    }
+
+    updateSettings(settings) {
+        if (settings.packs) {
+            this.selectedPacks = settings.packs;
+        }
+        return { success: true };
     }
 }
 

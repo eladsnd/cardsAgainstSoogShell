@@ -58,6 +58,7 @@ class App {
 
         this.state.playerName = name;
         this.socket.emit('createRoom', name, (res) => {
+            console.log('createRoom response:', res);
             if (res.success) {
                 this.saveSession(res.roomCode, name);
                 this.ui.showScreen('lobby');
@@ -116,10 +117,24 @@ class App {
 
     // Event Handlers
     onGameState(data) {
+        console.log('onGameState:', data);
         this.state.update(data);
         this.ui.updatePlayerList(data.players);
 
-        if (data.gameStarted) {
+        if (data.phase === 'lobby') {
+            // Determine if I am the host (first player)
+            const isHost = data.players[0]?.id === this.socket.getId();
+
+            // Render pack selection
+            if (data.availablePacks && data.selectedPacks) {
+                this.ui.renderPackSelection(
+                    data.availablePacks,
+                    data.selectedPacks,
+                    isHost,
+                    (packId, isChecked) => this.togglePack(packId, isChecked, data.selectedPacks)
+                );
+            }
+        } else if (data.gameStarted) {
             this.ui.showScreen('game');
             this.ui.renderBlackCard(data.currentBlackCard);
 
@@ -152,30 +167,41 @@ class App {
             const phaseIndicator = document.getElementById('phaseIndicator');
 
             // Reset visibility
-            handSection.style.display = 'none';
-            submissionsSection.style.display = 'none';
-            winnerSection.style.display = 'none';
-            gameOverSection.style.display = 'none';
+            if (handSection) handSection.style.display = 'none';
+            if (submissionsSection) submissionsSection.style.display = 'none';
+            if (winnerSection) winnerSection.style.display = 'none';
+            if (gameOverSection) gameOverSection.style.display = 'none';
 
             if (data.phase === 'playing') {
-                phaseIndicator.textContent = isCzar ? 'Wait for players to submit...' : 'Pick your cards!';
-                if (!isCzar) {
+                if (phaseIndicator) phaseIndicator.textContent = isCzar ? 'Wait for players to submit...' : 'Pick your cards!';
+                if (!isCzar && handSection) {
                     handSection.style.display = 'block';
                 }
             } else if (data.phase === 'judging') {
-                phaseIndicator.textContent = isCzar ? 'Pick the winner!' : 'Czar is judging...';
-                submissionsSection.style.display = 'block';
-                // Note: Submissions are rendered via separate socket event or if included in gameState
+                if (phaseIndicator) phaseIndicator.textContent = isCzar ? 'Pick the winner!' : 'Czar is judging...';
+                if (submissionsSection) submissionsSection.style.display = 'block';
             } else if (data.phase === 'roundEnd') {
-                phaseIndicator.textContent = 'Round Over!';
-                winnerSection.style.display = 'block';
-                // Render winner info if available
+                if (phaseIndicator) phaseIndicator.textContent = 'Round Over!';
+                if (winnerSection) winnerSection.style.display = 'block';
                 if (data.roundWinner) {
                     const winner = data.players.find(p => p.id === data.roundWinner);
                     document.getElementById('winnerSubmission').textContent = `${winner ? winner.name : 'Someone'} won!`;
                 }
             }
         }
+    }
+
+    togglePack(packId, isChecked, currentSelectedPacks) {
+        let newPacks = [...currentSelectedPacks];
+        if (isChecked) {
+            if (!newPacks.includes(packId)) newPacks.push(packId);
+        } else {
+            newPacks = newPacks.filter(id => id !== packId);
+        }
+
+        this.socket.emit('updateGameSettings', { packs: newPacks }, (res) => {
+            if (!res.success) this.ui.showError(res.message);
+        });
     }
 
     onHandUpdate(hand) {

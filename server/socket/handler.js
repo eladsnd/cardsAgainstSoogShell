@@ -78,6 +78,23 @@ module.exports = (io) => {
             io.to(game.roomCode).emit('playerJoined', { playerName });
         });
 
+        // Update game settings (packs)
+        socket.on('updateGameSettings', (settings, callback) => {
+            const game = roomManager.getGame(socket.data.roomCode);
+            if (!game) {
+                callback({ success: false, message: 'Room not found' });
+                return;
+            }
+
+            const result = game.updateSettings(settings);
+            callback(result);
+
+            if (result.success) {
+                // Broadcast new settings to all players in room
+                io.to(game.roomCode).emit('gameState', game.getGameState());
+            }
+        });
+
         // Start the game
         socket.on('startGame', (callback) => {
             const game = roomManager.getGame(socket.data.roomCode);

@@ -1,64 +1,68 @@
 // Deck Storage Utility for Cards Against Soog
-// Provides centralized deck management functions for localStorage
+// Provides centralized deck management functions using Server API
 
-const DECK_STORAGE_KEY = 'cardsAgainstSoogDecks';
+const API_URL = '/api/decks';
 
-// Get all decks from localStorage
-function getAllDecks() {
+// Get all decks from server
+async function getAllDecks() {
     try {
-        const saved = localStorage.getItem(DECK_STORAGE_KEY);
-        if (saved) {
-            return JSON.parse(saved);
-        }
+        const res = await fetch(API_URL);
+        if (!res.ok) throw new Error('Failed to fetch decks');
+        return await res.json();
     } catch (e) {
         console.error('Failed to load decks:', e);
+        return {};
     }
-
-    // Return default deck if nothing saved
-    return {
-        'default': {
-            name: 'Default Deck',
-            blackCards: [],
-            whiteCards: [],
-            createdAt: Date.now()
-        }
-    };
 }
 
-// Save all decks to localStorage
-function saveAllDecks(decks) {
+// Save a specific deck to server
+async function saveDeck(id, deck) {
     try {
-        localStorage.setItem(DECK_STORAGE_KEY, JSON.stringify(decks));
-        return true;
+        const res = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, deck })
+        });
+        return res.ok;
     } catch (e) {
-        console.error('Failed to save decks:', e);
+        console.error('Failed to save deck:', e);
+        return false;
+    }
+}
+
+// Delete a deck from server
+async function deleteDeck(id) {
+    try {
+        const res = await fetch(`${API_URL}/${id}`, {
+            method: 'DELETE'
+        });
+        return res.ok;
+    } catch (e) {
+        console.error('Failed to delete deck:', e);
         return false;
     }
 }
 
 // Get a specific deck by ID
-function getDeck(deckId) {
-    const decks = getAllDecks();
+async function getDeck(deckId) {
+    const decks = await getAllDecks();
     return decks[deckId] || null;
-}
-
-// Get deck list for dropdown
-function getDeckList() {
-    const decks = getAllDecks();
-    return Object.keys(decks).map(id => ({
-        id,
-        name: decks[id].name,
-        blackCount: decks[id].blackCards.length,
-        whiteCount: decks[id].whiteCards.length
-    }));
 }
 
 // Export for use in other scripts
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         getAllDecks,
-        saveAllDecks,
-        getDeck,
-        getDeckList
+        saveDeck,
+        deleteDeck,
+        getDeck
+    };
+} else {
+    // Browser global
+    window.DeckStorage = {
+        getAllDecks,
+        saveDeck,
+        deleteDeck,
+        getDeck
     };
 }

@@ -27,15 +27,20 @@ export class UIRenderer {
             displayRoomCode: document.getElementById('displayRoomCode'),
             qrCodeContainer: document.getElementById('qrCodeContainer')
         };
+        console.log('Renderer initialized. Screens:', this.screens);
     }
 
     showScreen(screenName) {
+        console.log('Showing screen:', screenName);
         Object.values(this.screens).forEach(s => {
             if (s) s.classList.remove('active');
         });
 
         if (this.screens[screenName]) {
             this.screens[screenName].classList.add('active');
+            console.log('Activated screen:', this.screens[screenName]);
+        } else {
+            console.error('Screen not found:', screenName);
         }
     }
 
@@ -75,7 +80,7 @@ export class UIRenderer {
 
     updateScoreboard(players) {
         this.elements.scoreboard.innerHTML = players.map(p => `
-            <div class="score-item ${p.isCzar ? 'czar' : ''}">
+            <div class="score-item ${p.id === p.currentCzarId ? 'czar' : ''}">
                 <span class="name">${p.name}</span>
                 <span class="score">${p.score}</span>
             </div>
@@ -135,6 +140,47 @@ export class UIRenderer {
         });
     }
 
+    renderPackSelection(packs, selectedIds, isHost, onToggle) {
+        const container = document.getElementById('packList');
+        const section = document.getElementById('gameSettingsSection');
+
+        if (!container || !section) return;
+
+        section.style.display = 'block';
+        container.innerHTML = '';
+
+        packs.forEach(pack => {
+            const isSelected = selectedIds.includes(pack.id);
+            const div = document.createElement('div');
+            div.className = 'pack-item';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = isSelected;
+            checkbox.disabled = !isHost;
+            checkbox.id = `pack-${pack.id}`;
+
+            if (isHost) {
+                checkbox.onchange = () => onToggle(pack.id, checkbox.checked);
+                div.onclick = (e) => {
+                    if (e.target !== checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                        onToggle(pack.id, checkbox.checked);
+                    }
+                };
+            }
+
+            const label = document.createElement('label');
+            label.htmlFor = `pack-${pack.id}`;
+            label.textContent = pack.name;
+            label.style.cursor = isHost ? 'pointer' : 'default';
+
+            div.appendChild(checkbox);
+            div.appendChild(label);
+            container.appendChild(div);
+        });
+    }
+
     applyTextDirection(element, text) {
         if (UNICODE_RANGES.HEBREW.test(text)) {
             element.classList.add('rtl');
@@ -145,7 +191,6 @@ export class UIRenderer {
         }
     }
 
-    // New: Render QR Code
     renderQRCode(url) {
         if (this.elements.qrCodeContainer && window.QRCode) {
             this.elements.qrCodeContainer.innerHTML = '';
