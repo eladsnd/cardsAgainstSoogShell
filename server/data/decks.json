@@ -1,8 +1,19 @@
 {
-  "test_deck_browser": {
-    "name": "Browser Test Deck",
-    "blackCards": [],
-    "whiteCards": [],
-    "createdAt": 1766165103958
+  "deck_1766165733315": {
+    "name": "test",
+    "blackCards": [
+      {
+        "id": 1766165734777,
+        "text": "test",
+        "pick": 1
+      }
+    ],
+    "whiteCards": [
+      {
+        "id": 1766165735699,
+        "text": "test"
+      }
+    ],
+    "createdAt": 1766165733315
   }
 }
