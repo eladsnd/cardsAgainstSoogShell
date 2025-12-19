@@ -10,16 +10,34 @@ let selectedCards = [];
 // Session persistence
 const SESSION_KEY = 'cardsAgainstSoogSession';
 
+/**
+ * Save current session to localStorage
+ * @returns {boolean} Success status
+ */
 function saveSession() {
-    if (currentRoomCode && playerName) {
+    try {
+        if (!currentRoomCode || !playerName) {
+            console.warn('Cannot save session: missing room code or player name');
+            return false;
+        }
+
         localStorage.setItem(SESSION_KEY, JSON.stringify({
             roomCode: currentRoomCode,
             playerName: playerName,
             timestamp: Date.now()
         }));
+        return true;
+    } catch (error) {
+        console.error('Failed to save session:', error);
+        showError('Failed to save your session. Please check browser settings.');
+        return false;
     }
 }
 
+/**
+ * Load saved session from localStorage
+ * @returns {Object|null} Session data or null
+ */
 function loadSession() {
     try {
         const saved = localStorage.getItem(SESSION_KEY);
@@ -30,14 +48,21 @@ function loadSession() {
                 return session;
             }
         }
-    } catch (e) {
-        console.error('Failed to load session:', e);
+    } catch (error) {
+        console.error('Failed to load session:', error);
     }
     return null;
 }
 
+/**
+ * Clear saved session from localStorage
+ */
 function clearSession() {
-    localStorage.removeItem(SESSION_KEY);
+    try {
+        localStorage.removeItem(SESSION_KEY);
+    } catch (error) {
+        console.error('Failed to clear session:', error);
+    }
 }
 
 // Try to restore session on page load
@@ -108,6 +133,24 @@ function showError(message) {
     setTimeout(() => {
         errorMessage.style.display = 'none';
     }, 4000);
+}
+
+/**
+ * Validate player name input
+ * @param {string} name - Player name to validate
+ * @returns {Object} {valid: boolean, error: string}
+ */
+function validatePlayerName(name) {
+    if (!name || name.trim().length === 0) {
+        return { valid: false, error: 'Please enter your name' };
+    }
+    if (name.trim().length > 20) {
+        return { valid: false, error: 'Name too long (max 20 characters)' };
+    }
+    if (!/^[a-zA-Z0-9\u0590-\u05FF\s]+$/.test(name)) {
+        return { valid: false, error: 'Name contains invalid characters' };
+    }
+    return { valid: true, error: null };
 }
 
 // Hebrew RTL detection
