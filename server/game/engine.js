@@ -1,9 +1,11 @@
-const { blackCards, whiteCards, shuffleArray } = require('./cards-data');
+const { blackCards, whiteCards, shuffleArray } = require('../../cards-data');
+const config = require('../../config');
 
-const CARDS_PER_HAND = 7;
-const WINNING_SCORE = 5;
-
-class Game {
+/**
+ * Game Engine class managing Cards Against Humanity game logic
+ * Refactored from game-logic.js
+ */
+class GameEngine {
     constructor(roomCode) {
         this.roomCode = roomCode;
         this.players = [];
@@ -46,8 +48,8 @@ class Game {
     }
 
     startGame() {
-        if (this.players.length < 3) {
-            return { success: false, message: 'Need at least 3 players to start' };
+        if (this.players.length < config.MIN_PLAYERS) {
+            return { success: false, message: `Need at least ${config.MIN_PLAYERS} players to start` };
         }
 
         this.gameStarted = true;
@@ -55,7 +57,7 @@ class Game {
 
         // Deal initial hands to all players
         this.players.forEach(player => {
-            this.dealCards(player, CARDS_PER_HAND);
+            this.dealCards(player, config.HAND_SIZE);
         });
 
         // Start first round
@@ -161,7 +163,7 @@ class Game {
             this.phase = 'roundEnd';
 
             // Check for game winner
-            if (winner.score >= WINNING_SCORE) {
+            if (winner.score >= config.WINNING_SCORE) {
                 return { success: true, gameOver: true, winner };
             }
         }
@@ -224,4 +226,4 @@ class Game {
     }
 }
 
-module.exports = Game;
+module.exports = GameEngine;

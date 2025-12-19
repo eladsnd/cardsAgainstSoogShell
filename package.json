@@ -1,22 +1,10 @@
-{
-  "name": "cards-against-soog",
-  "version": "1.0.0",
-  "description": "Multiplayer Cards Against Humanity game",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
-  },
-  "keywords": [
-    "cards",
-    "game",
-    "multiplayer",
-    "socket.io"
   ],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",
+    "internal-ip": "^8.0.1",
+    "qrcode": "^1.5.4",
     "socket.io": "^4.6.1"
   },
   "devDependencies": {
