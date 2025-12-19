@@ -32,6 +32,7 @@ class App {
         this.socket.on('playerJoined', (data) => console.log('Player joined:', data));
         this.socket.on('playerLeft', (data) => console.log('Player left:', data));
         this.socket.on('roundWinner', (data) => this.onRoundWinner(data));
+        this.socket.on('submissions', (data) => this.onSubmissions(data));
     }
 
     async fetchLocalIP() {
@@ -128,7 +129,13 @@ class App {
             const czarName = czar ? czar.name : 'Unknown';
 
             // Update Info & Scoreboard
-            this.ui.updateGameInfo(data.currentRound, czarName, isCzar);
+            this.ui.updateGameInfo(
+                data.currentRound,
+                czarName,
+                isCzar,
+                data.submissionCount || 0,
+                data.players.length
+            );
 
             // Mark czar in players array for scoreboard
             const playersWithCzar = data.players.map(p => ({
@@ -188,10 +195,56 @@ class App {
         this.ui.renderHand(this.state.hand, this.state.selectedCards, this.onCardSelect.bind(this));
     }
 
+    onSubmissions(submissions) {
+        // Only Czar receives this
+        this.ui.renderSubmissions(submissions, true, this.selectWinner.bind(this));
+    }
+
+    selectWinner(playerId) {
+        if (confirm('Select this as the winner?')) {
+            this.socket.emit('selectWinner', playerId, (res) => {
+                if (!res.success) this.ui.showError(res.message);
+            });
+        }
+    }
+
     onRoundWinner(data) {
         // Show winner UI
         console.log('Round winner:', data);
-        // Could show a modal or toast here
+
+        const winnerSection = document.getElementById('roundWinnerSection');
+        const winnerSubmission = document.getElementById('winnerSubmission');
+        const nextRoundBtn = document.getElementById('nextRoundBtn');
+
+        if (winnerSection && winnerSubmission) {
+            winnerSection.style.display = 'block';
+
+            // Find winner name from players list or data
+            const winnerName = data.winner ? data.winner.name : 'Unknown';
+
+            // Format winning cards
+            const winningCardsText = data.submissions
+                .find(s => s.playerId === data.winnerId)
+                ?.cards.map(c => c.text).join(' + ') || '';
+
+            winnerSubmission.innerHTML = `
+                <div class="winner-name">${winnerName} wins!</div>
+                <div class="winner-cards">${winningCardsText}</div>
+            `;
+
+            // Only Czar can click next round
+            const myId = this.socket.getId();
+            // We need to know who the NEW czar is, or if the current user WAS the czar.
+            // For simplicity, let anyone click next round for now, or check if we are the czar of the COMPLETED round.
+            // Better: The server rotates the Czar at the START of the new round.
+            // So for "Next Round" button, anyone can click it to trigger the server.
+
+            nextRoundBtn.onclick = () => {
+                this.socket.emit('nextRound', (res) => {
+                    if (!res.success) this.ui.showError(res.message);
+                });
+            };
+        }
     }
 
     // Session Management

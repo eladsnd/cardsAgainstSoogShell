@@ -60,9 +60,12 @@ export class UIRenderer {
         `).join('');
     }
 
-    updateGameInfo(round, czarName, isCzar) {
-        this.elements.roundInfo.textContent = round;
-        this.elements.czarInfo.textContent = `Czar: ${czarName} ${isCzar ? '(YOU)' : ''}`;
+    updateGameInfo(round, czarName, isCzar, submissionCount, totalPlayers) {
+        this.elements.roundInfo.textContent = `Round ${round}`;
+
+        const subText = `Submissions: ${submissionCount}/${totalPlayers - 1}`;
+        this.elements.czarInfo.textContent = `Czar: ${czarName} ${isCzar ? '(YOU)' : ''} | ${subText}`;
+
         if (isCzar) {
             this.elements.czarInfo.classList.add('highlight');
         } else {

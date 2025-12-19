@@ -321,35 +321,6 @@ button.secondary {
 }
 
 .card.black {
-  background: var(--card-black);
-  color: white;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-}
-
-.card.white {
-  background: var(--card-white);
-  color: #1e1e1e;
-  border: 3px solid rgba(0, 0, 0, 0.05);
-}
-
-.card.selected {
-  border-color: var(--accent-purple);
-  box-shadow: 0 0 30px rgba(168, 85, 247, 0.5);
-  transform: translateY(-10px);
-}
-
-.card.winner {
-  border-color: var(--success);
-  box-shadow: 0 0 40px rgba(16, 185, 129, 0.6);
-}
-
-.card-text {
-  line-height: 1.5;
-}
-
-.phase-indicator {
-  text-align: center;
-  padding: 1rem;
   background: var(--bg-glass);
   backdrop-filter: blur(10px);
   border-radius: 12px;
