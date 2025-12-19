@@ -2,7 +2,7 @@
  * Main Application Entry Point
  */
 
-import { socketClient } from './utils/socket-client.js';
+import { SocketClient } from './utils/socket-client.js';
 import { UIRenderer } from './ui/renderer.js';
 import { GameState } from './game/state.js';
 import { STORAGE_KEYS } from '../constants.js';
@@ -11,7 +11,7 @@ class App {
     constructor() {
         this.ui = new UIRenderer();
         this.state = new GameState();
-        this.socket = socketClient;
+        this.socket = new SocketClient();
 
         this.bindEvents();
         this.checkSession();
@@ -42,10 +42,10 @@ class App {
             this.ui.renderQRCode(data.url);
 
             // Add IP display
-            const ipDisplay = document.createElement('div');
-            ipDisplay.className = 'local-ip-display';
-            ipDisplay.innerHTML = `Join at: <strong>${data.url}</strong>`;
-            document.querySelector('.container').prepend(ipDisplay);
+            const ipDisplay = document.getElementById('localIpDisplay');
+            if (ipDisplay) {
+                ipDisplay.innerHTML = `Join at: <strong>${data.url}</strong>`;
+            }
         } catch (e) {
             console.error('Failed to fetch local IP', e);
         }
@@ -108,7 +108,7 @@ class App {
     leaveGame() {
         if (confirm('Leave game?')) {
             this.socket.emit('leaveGame');
-            localStorage.removeItem(STORAGE_KEYS.SESSION);
+            sessionStorage.removeItem(STORAGE_KEYS.SESSION);
             location.reload();
         }
     }
@@ -124,9 +124,50 @@ class App {
 
             const myId = this.socket.getId();
             const isCzar = data.currentCzarId === myId;
+            const czar = data.players.find(p => p.id === data.currentCzarId);
+            const czarName = czar ? czar.name : 'Unknown';
 
-            // Update UI based on phase
-            // ... (Add phase logic here)
+            // Update Info & Scoreboard
+            this.ui.updateGameInfo(data.currentRound, czarName, isCzar);
+
+            // Mark czar in players array for scoreboard
+            const playersWithCzar = data.players.map(p => ({
+                ...p,
+                isCzar: p.id === data.currentCzarId
+            }));
+            this.ui.updateScoreboard(playersWithCzar);
+
+            // Phase Logic
+            const handSection = document.getElementById('playerHandSection');
+            const submissionsSection = document.getElementById('submissionsSection');
+            const winnerSection = document.getElementById('roundWinnerSection');
+            const gameOverSection = document.getElementById('gameOverSection');
+            const phaseIndicator = document.getElementById('phaseIndicator');
+
+            // Reset visibility
+            handSection.style.display = 'none';
+            submissionsSection.style.display = 'none';
+            winnerSection.style.display = 'none';
+            gameOverSection.style.display = 'none';
+
+            if (data.phase === 'playing') {
+                phaseIndicator.textContent = isCzar ? 'Wait for players to submit...' : 'Pick your cards!';
+                if (!isCzar) {
+                    handSection.style.display = 'block';
+                }
+            } else if (data.phase === 'judging') {
+                phaseIndicator.textContent = isCzar ? 'Pick the winner!' : 'Czar is judging...';
+                submissionsSection.style.display = 'block';
+                // Note: Submissions are rendered via separate socket event or if included in gameState
+            } else if (data.phase === 'roundEnd') {
+                phaseIndicator.textContent = 'Round Over!';
+                winnerSection.style.display = 'block';
+                // Render winner info if available
+                if (data.roundWinner) {
+                    const winner = data.players.find(p => p.id === data.roundWinner);
+                    document.getElementById('winnerSubmission').textContent = `${winner ? winner.name : 'Someone'} won!`;
+                }
+            }
         }
     }
 
@@ -148,22 +189,60 @@ class App {
     }
 
     onRoundWinner(data) {
-        // Show winner overlay
-        alert(`Winner: ${data.winner.name}`);
+        // Show winner UI
+        console.log('Round winner:', data);
+        // Could show a modal or toast here
     }
 
-    saveSession(room, name) {
-        localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify({
-            roomCode: room,
-            playerName: name,
-            timestamp: Date.now()
-        }));
+    // Session Management
+    saveSession(roomCode, playerName) {
+        try {
+            const session = {
+                roomCode,
+                playerName,
+                timestamp: Date.now()
+            };
+            sessionStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(session));
+        } catch (e) {
+            console.error('Failed to save session:', e);
+        }
     }
 
     checkSession() {
-        // Restore session logic
+        try {
+            const saved = sessionStorage.getItem(STORAGE_KEYS.SESSION);
+            if (saved) {
+                const session = JSON.parse(saved);
+                // Basic validation
+                if (session.roomCode && session.playerName) {
+                    console.log('Restoring session:', session);
+                    this.state.playerName = session.playerName;
+                    this.state.roomCode = session.roomCode;
+
+                    // Auto-join
+                    this.socket.emit('joinRoom', session.roomCode, session.playerName, (res) => {
+                        if (res.success) {
+                            this.ui.showScreen('lobby');
+                            this.ui.updateRoomCode(session.roomCode);
+                        } else {
+                            // Session invalid, clear it
+                            sessionStorage.removeItem(STORAGE_KEYS.SESSION);
+                        }
+                    });
+                }
+            }
+        } catch (e) {
+            console.error('Failed to restore session:', e);
+        }
     }
 }
 
 // Initialize
-window.app = new App();
+console.log('Starting App initialization...');
+try {
+    const app = new App();
+    window.app = app;
+    console.log('App initialized successfully, attached to window.app');
+} catch (error) {
+    console.error('CRITICAL: App initialization failed:', error);
+}

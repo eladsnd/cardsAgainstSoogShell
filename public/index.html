@@ -19,6 +19,10 @@
       <h1 class="logo">Cards Against Soog</h1>
       <p class="subtitle">Play with friends in real-time!</p>
 
+      <!-- QR Code Container -->
+      <div id="qrCodeContainer" class="qr-code-container"></div>
+      <div id="localIpDisplay" class="local-ip-display"></div>
+
       <div class="input-group">
         <input type="text" id="playerNameInput" placeholder="Enter your name" maxlength="20" autocomplete="off">
       </div>
@@ -35,159 +39,92 @@
 
       <div class="divider" style="margin-top: 2rem;">TOOLS</div>
 
-      <a href="/creator.html" style="text-decoration: none;">
-        <button class="secondary" style="margin-top: 0;">?? Create Custom Cards</button>
+      <a href="/deck-creator.html" style="text-decoration: none;">
+        <button class="secondary" style="margin-top: 0;">🎴 Create Custom Cards</button>
       </a>
 
-      <div id="errorMessage" class="status-message error-message" style="display: none;"></div> class="status-message
-      error-message" style="display: none;">
-    </div>
-  </div>
-
-  <!-- LOBBY SCREEN -->
-  <div id="lobbyScreen" class="screen">
-    <h2>Waiting for Players...</h2>
-
-    <div class="room-code-display">
-      <div class="room-code-label">Room Code</div>
-      <div class="room-code" id="displayRoomCode">----</div>
-      <p class="subtitle">Share this code with your friends!</p>
+      <div id="errorMessage" class="status-message error-message" style="display: none;"></div>
     </div>
 
-    <div class="players-waiting">
-      <h3>Players (<span id="playerCount">0</span>)</h3>
-      <ul id="playerList" class="player-list"></ul>
+    <!-- LOBBY SCREEN -->
+    <div id="lobbyScreen" class="screen">
+      <h2>Waiting for Players...</h2>
+
+      <div class="room-code-display">
+        <div class="room-code-label">Room Code</div>
+        <div class="room-code" id="displayRoomCode">----</div>
+        <p class="subtitle">Share this code with your friends!</p>
+      </div>
+
+      <div class="players-waiting">
+        <h3>Players (<span id="playerCount">0</span>)</h3>
+        <ul id="playerList" class="player-list"></ul>
+      </div>
+
+      <button id="startGameBtn">Start Game</button>
+      <p class="subtitle">Need at least 3 players to start</p>
     </div>
 
-    <button id="startGameBtn">Start Game</button>
-    <p class="subtitle">Need at least 3 players to start</p>
-  </div>
+    <!-- GAME SCREEN -->
+    <div id="gameScreen" class="screen">
+      <div class="game-header">
+        <div class="round-info">Round <span id="roundNumber">1</span></div>
+        <div class="czar-indicator" id="czarIndicator">Czar: ---</div>
+        <button id="leaveGameBtn" class="secondary"
+          style="width: auto; padding: 0.5rem 1rem; margin: 0; font-size: 0.9rem;">Leave Game</button>
+      </div>
 
-  <!-- GAME SCREEN -->
-  <div id="gameScreen" class="screen">
-    <div class="game-header">
-      <div class="round-info">Round <span id="roundNumber">1</span></div>
-      <div class="czar-indicator" id="czarIndicator">Czar: ---</div>
-      <button id="leaveGameBtn" class="secondary"
-        style="width: auto; padding: 0.5rem 1rem; margin: 0; font-size: 0.9rem;">Leave Game</button>
-    </div>
+      <div class="scoreboard" id="scoreboard"></div>
 
-    <div class="scoreboard" id="scoreboard"></div>
+      <div id="phaseIndicator" class="phase-indicator"></div>
 
-    <div id="phaseIndicator" class="phase-indicator"></div>
+      <!-- Black Card Display -->
+      <div class="black-card-container">
+        <div class="card black" id="blackCardDisplay">
+          <div class="card-text">Waiting for question...</div>
+        </div>
+      </div>
 
-    <!-- Black Card Display -->
-    <div class="black-card-container">
-      <div class="card black" id="blackCardDisplay">
-        <div class="card-text">Waiting for question...</div>
+      <!-- Status/Instructions -->
+      <div id="gameStatus" class="status-message"></div>
+
+      <!-- Submissions (for czar to judge) -->
+      <div id="submissionsSection" style="display: none;">
+        <h3 class="white-cards-label">Pick the Funniest Answer!</h3>
+        <div id="submissionsGrid" class="submissions-grid"></div>
+      </div>
+
+      <!-- Round Winner Display -->
+      <div id="roundWinnerSection" style="display: none;">
+        <h3 class="white-cards-label">Round Winner!</h3>
+        <div id="winnerSubmission"></div>
+        <button id="nextRoundBtn">Next Round</button>
+      </div>
+
+      <!-- Game Over -->
+      <div id="gameOverSection" class="game-over-screen" style="display: none;">
+        <div class="emoji-celebration">🎉</div>
+        <div class="winner-announcement" id="gameWinnerName">Player Won!</div>
+        <button id="newGameBtn">Back to Home</button>
+      </div>
+
+      <!-- Player's Hand -->
+      <div id="playerHandSection">
+        <h3 class="white-cards-label">Your Cards</h3>
+        <div id="playerHand" class="white-cards-grid"></div>
+        <button id="submitCardsBtn" class="primary" style="margin-top: 1rem; width: 100%;">Submit Answer</button>
       </div>
     </div>
-
-    <!-- Status/Instructions -->
-    <div id="gameStatus" class="status-message"></div>
-
-    <!-- Submissions (for czar to judge) -->
-    <div id="submissionsSection" style="display: none;">
-      <h3 class="white-cards-label">Pick the Funniest Answer!</h3>
-      <div id="submissionsGrid" class="submissions-grid"></div>
-    </div>
-
-    <!-- Round Winner Display -->
-    <div id="roundWinnerSection" style="display: none;">
-      <h3 class="white-cards-label">Round Winner!</h3>
-      <div id="winnerSubmission"></div>
-      <button id="nextRoundBtn">Next Round</button>
-    </div>
-
-    <!-- Game Over -->
-    <div id="gameOverSection" class="game-over-screen" style="display: none;">
-      <div class="emoji-celebration">🎉</div>
-      <div class="winner-announcement" id="gameWinnerName">Player Won!</div>
-      <button id="newGameBtn">Back to Home</button>
-    </div>
-
-    <!-- Player's Hand -->
-    <div id="playerHandSection">
-      <div id="errorMessage" class="status-message error-message" style="display: none;"></div> class="status-message
-      error-message" style="display: none;">
-    </div>
-  </div>
-
-  <!-- LOBBY SCREEN -->
-  <div id="lobbyScreen" class="screen">
-    <h2>Waiting for Players...</h2>
-
-    <div class="room-code-display">
-      <div class="room-code-label">Room Code</div>
-      <div class="room-code" id="displayRoomCode">----</div>
-      <p class="subtitle">Share this code with your friends!</p>
-    </div>
-
-    <div class="players-waiting">
-      <h3>Players (<span id="playerCount">0</span>)</h3>
-      <ul id="playerList" class="player-list"></ul>
-    </div>
-
-    <button id="startGameBtn">Start Game</button>
-    <p class="subtitle">Need at least 3 players to start</p>
-  </div>
-
-  <!-- GAME SCREEN -->
-  <div id="gameScreen" class="screen">
-    <div class="game-header">
-      <div class="round-info">Round <span id="roundNumber">1</span></div>
-      <div class="czar-indicator" id="czarIndicator">Czar: ---</div>
-      <button id="leaveGameBtn" class="secondary"
-        style="width: auto; padding: 0.5rem 1rem; margin: 0; font-size: 0.9rem;">Leave Game</button>
-    </div>
-
-    <div class="scoreboard" id="scoreboard"></div>
-
-    <div id="phaseIndicator" class="phase-indicator"></div>
-
-    <!-- Black Card Display -->
-    <div class="black-card-container">
-      <div class="card black" id="blackCardDisplay">
-        <div class="card-text">Waiting for question...</div>
-      </div>
-    </div>
-
-    <!-- Status/Instructions -->
-    <div id="gameStatus" class="status-message"></div>
-
-    <!-- Submissions (for czar to judge) -->
-    <div id="submissionsSection" style="display: none;">
-      <h3 class="white-cards-label">Pick the Funniest Answer!</h3>
-      <div id="submissionsGrid" class="submissions-grid"></div>
-    </div>
-
-    <!-- Round Winner Display -->
-    <div id="roundWinnerSection" style="display: none;">
-      <h3 class="white-cards-label">Round Winner!</h3>
-      <div id="winnerSubmission"></div>
-      <button id="nextRoundBtn">Next Round</button>
-    </div>
-
-    <!-- Game Over -->
-    <div id="gameOverSection" class="game-over-screen" style="display: none;">
-      <div class="emoji-celebration">🎉</div>
-      <div class="winner-announcement" id="gameWinnerName">Player Won!</div>
-      <button id="newGameBtn">Back to Home</button>
-    </div>
-
-    <!-- Player's Hand -->
-    <div id="playerHandSection">
-      <h3 class="white-cards-label">Your Cards</h3>
-      <div id="playerHand" class="white-cards-grid"></div>
-    </div>
-  </div>
   </div>
 
   <!-- QR Code Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
+  <!-- Socket.IO -->
+  <script src="/socket.io/socket.io.js"></script>
+
   <!-- Game Logic (Modular) -->
-  <script type="module" src="js/main.js"></script>
+  <script type="module" src="/js/main.js"></script>
 </body>
 
 </html>

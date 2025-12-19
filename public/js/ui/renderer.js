@@ -16,21 +16,24 @@ export class UIRenderer {
 
         this.elements = {
             playerList: document.getElementById('playerList'),
-            blackCard: document.getElementById('blackCard'),
+            blackCard: document.getElementById('blackCardDisplay'),
             playerHand: document.getElementById('playerHand'),
-            submissions: document.getElementById('submissions'),
-            roundInfo: document.getElementById('roundInfo'),
-            czarInfo: document.getElementById('czarInfo'),
+            submissions: document.getElementById('submissionsGrid'),
+            roundInfo: document.getElementById('roundNumber'),
+            czarInfo: document.getElementById('czarIndicator'),
             gameStatus: document.getElementById('gameStatus'),
             scoreboard: document.getElementById('scoreboard'),
             errorMessage: document.getElementById('errorMessage'),
             displayRoomCode: document.getElementById('displayRoomCode'),
-            qrCodeContainer: document.getElementById('qrCodeContainer') // New
+            qrCodeContainer: document.getElementById('qrCodeContainer')
         };
     }
 
     showScreen(screenName) {
-        Object.values(this.screens).forEach(s => s.classList.remove('active'));
+        Object.values(this.screens).forEach(s => {
+            if (s) s.classList.remove('active');
+        });
+
         if (this.screens[screenName]) {
             this.screens[screenName].classList.add('active');
         }
@@ -53,6 +56,25 @@ export class UIRenderer {
             <div class="player-item ${p.connected ? '' : 'disconnected'}">
                 <span class="player-name">${p.name}</span>
                 <span class="player-score">${p.score} 🏆</span>
+            </div>
+        `).join('');
+    }
+
+    updateGameInfo(round, czarName, isCzar) {
+        this.elements.roundInfo.textContent = round;
+        this.elements.czarInfo.textContent = `Czar: ${czarName} ${isCzar ? '(YOU)' : ''}`;
+        if (isCzar) {
+            this.elements.czarInfo.classList.add('highlight');
+        } else {
+            this.elements.czarInfo.classList.remove('highlight');
+        }
+    }
+
+    updateScoreboard(players) {
+        this.elements.scoreboard.innerHTML = players.map(p => `
+            <div class="score-item ${p.isCzar ? 'czar' : ''}">
+                <span class="name">${p.name}</span>
+                <span class="score">${p.score}</span>
             </div>
         `).join('');
     }
