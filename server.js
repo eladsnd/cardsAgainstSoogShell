@@ -2,12 +2,13 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const Game = require('./game-logic');
+const config = require('./config');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-const PORT = process.env.PORT || 3000;
+const PORT = config.PORT;
 
 // Serve static files
 app.use(express.static('public'));
@@ -15,11 +16,14 @@ app.use(express.static('public'));
 // Store active games
 const games = new Map(); // roomCode -> Game
 
-// Generate a random 4-character room code
+/**
+ * Generate a random room code
+ * @returns {string} Random room code
+ */
 function generateRoomCode() {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const chars = config.ROOM_CODE_CHARS;
     let code = '';
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < config.ROOM_CODE_LENGTH; i++) {
         code += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return code;
