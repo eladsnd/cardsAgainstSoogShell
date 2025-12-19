@@ -46,17 +46,14 @@ if (savedSession) {
     playerName = savedSession.playerName;
     currentRoomCode = savedSession.roomCode;
 
-    console.log('Attempting to rejoin room:', savedSession.roomCode, 'as', savedSession.playerName);
 
     // Attempt to rejoin
     socket.emit('joinRoom', savedSession.roomCode, savedSession.playerName, (response) => {
         if (response.success) {
-            console.log('Rejoined successfully');
             displayRoomCode.textContent = savedSession.roomCode;
             playerNameInput.value = savedSession.playerName;
             // gameState event will determine which screen to show
         } else {
-            console.log('Failed to rejoin:', response.message);
             // Failed to rejoin, clear session and stay on home
             clearSession();
             currentRoomCode = null;
@@ -164,7 +161,6 @@ function renderBlackCard(card) {
 function renderPlayerHand() {
     playerHandEl.innerHTML = '';
 
-    console.log('[DEBUG] renderPlayerHand called, hand size:', playerHand.length);
 
     playerHand.forEach(card => {
         const cardEl = document.createElement('div');
@@ -187,7 +183,6 @@ function renderPlayerHand() {
         playerHandEl.appendChild(cardEl);
     });
 
-    console.log('[DEBUG] Rendered', playerHand.length, 'cards to DOM');
 }
 
 function selectCard(card) {
@@ -447,7 +442,6 @@ socket.on('gameState', (state) => {
 });
 
 socket.on('yourHand', (hand) => {
-    console.log('Received hand with', hand.length, 'cards');
     playerHand = hand;
     selectedCards = [];
     renderPlayerHand();
@@ -488,7 +482,7 @@ socket.on('playerJoined', (data) => {
 });
 
 socket.on('playerLeft', (data) => {
-    console.log(`${data.playerName} left the game`);
+    // Player left notification
 });
 
 // Make submitCards available globally

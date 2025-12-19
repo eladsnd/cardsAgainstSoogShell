@@ -28,7 +28,6 @@
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
                 const data = JSON.parse(saved);
-                console.log(`Loaded ${data.blackCards?.length || 0} black cards and ${data.whiteCards?.length || 0} white cards from storage`);
                 return {
                     blackCards: data.blackCards || [],
                     whiteCards: data.whiteCards || []

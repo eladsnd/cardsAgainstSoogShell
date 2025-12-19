@@ -26,7 +26,6 @@ function generateRoomCode() {
 }
 
 io.on('connection', (socket) => {
-    console.log(`User connected: ${socket.id}`);
 
     // Create a new game room
     socket.on('createRoom', (playerName, callback) => {
@@ -44,8 +43,6 @@ io.on('connection', (socket) => {
         socket.join(roomCode);
         socket.data.roomCode = roomCode;
         socket.data.playerName = playerName;
-
-        console.log(`Room created: ${roomCode} by ${playerName}`);
 
         callback({ success: true, roomCode });
 
@@ -106,8 +103,6 @@ io.on('connection', (socket) => {
         socket.join(roomCode);
         socket.data.roomCode = roomCode;
         socket.data.playerName = playerName;
-
-        console.log(`${playerName} joined room: ${roomCode}`);
 
         callback({ success: true, roomCode });
 
@@ -243,7 +238,6 @@ io.on('connection', (socket) => {
                 // Delete room if empty
                 if (game.players.length === 0) {
                     games.delete(roomCode);
-                    console.log(`Room ${roomCode} deleted (all players left)`);
                 }
             }
 
@@ -254,8 +248,6 @@ io.on('connection', (socket) => {
 
     // Handle disconnection
     socket.on('disconnect', () => {
-        console.log(`User disconnected: ${socket.id}`);
-
         const roomCode = socket.data.roomCode;
         if (roomCode) {
             const game = games.get(roomCode);
@@ -269,7 +261,6 @@ io.on('connection', (socket) => {
                     // Clean up empty rooms
                     if (game.players.every(p => !p.connected)) {
                         games.delete(roomCode);
-                        console.log(`Room ${roomCode} deleted (all players disconnected)`);
                     }
                 }
             }
