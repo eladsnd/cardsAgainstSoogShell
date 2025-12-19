@@ -1,9 +1,0 @@
-﻿      <button id="joinRoomBtn" class="secondary">Join Existing Game</button>
-
-      <div class="divider" style="margin-top: 2rem;">TOOLS</div>
-      
-      <a href="/creator.html" style="text-decoration: none;">
-        <button class="secondary" style="margin-top: 0;">🎨 Create Custom Cards</button>
-      </a>
-
-      <div id="errorMessage" class="status-message error-message" style="display: none;"></div>
