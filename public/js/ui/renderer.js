@@ -25,7 +25,9 @@ export class UIRenderer {
             scoreboard: document.getElementById('scoreboard'),
             errorMessage: document.getElementById('errorMessage'),
             displayRoomCode: document.getElementById('displayRoomCode'),
-            qrCodeContainer: document.getElementById('qrCodeContainer')
+            qrCodeContainer: document.getElementById('qrCodeContainer'),
+            swapsRemaining: document.getElementById('swapsRemainingDisplay'),
+            swapCardsBtn: document.getElementById('swapCardsBtn'),
         };
         console.log('Renderer initialized. Screens:', this.screens);
     }
@@ -151,6 +153,18 @@ export class UIRenderer {
             el.onclick = () => onSelect(cardIdStr);
             this.elements.playerHand.appendChild(el);
         });
+
+        // Update Swap Button State
+        if (this.elements.swapCardsBtn) {
+            const canSwap = selectedIds.length > 0 && selectedIds.length <= 3;
+            this.elements.swapCardsBtn.disabled = !canSwap;
+        }
+    }
+
+    updateSwapsDisplay(count) {
+        if (this.elements.swapsRemaining) {
+            this.elements.swapsRemaining.textContent = `Swaps left: ${count}`;
+        }
     }
 
     renderSubmissions(submissions, isCzar, onSelectWinner) {

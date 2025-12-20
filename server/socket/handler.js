@@ -27,55 +27,34 @@ module.exports = (io) => {
                 return;
             }
 
-            // Check if player is rejoining (same name exists in game)
-            const existingPlayer = game.players.find(p => p.name === playerName);
-
-            if (existingPlayer) {
-                // Player is rejoining - update their socket ID
-                existingPlayer.id = socket.id;
-                existingPlayer.connected = true;
-
-                socket.join(game.roomCode);
-                socket.data.roomCode = game.roomCode;
-                socket.data.playerName = playerName;
-
-                console.log(`${playerName} rejoined room: ${game.roomCode}`);
-
-                callback({ success: true, roomCode: game.roomCode });
-
-                // Send current game state
-                io.to(game.roomCode).emit('gameState', game.getGameState());
-
-                // If game started, send them their hand
-                if (game.gameStarted) {
-                    io.to(socket.id).emit('yourHand', game.getPlayerHand(socket.id));
-                }
-
-                io.to(game.roomCode).emit('playerJoined', { playerName: playerName + ' (rejoined)' });
-                return;
-            }
-
-            // New player joining
-            if (game.gameStarted) {
-                callback({ success: false, message: 'Game already in progress' });
-                return;
-            }
-
-            const added = game.addPlayer(socket.id, playerName);
-            if (!added) {
+            const success = game.addPlayer(socket.id, playerName);
+            if (!success) {
                 callback({ success: false, message: 'Failed to join room' });
                 return;
             }
 
-            socket.join(game.roomCode);
-            socket.data.roomCode = game.roomCode;
+            // Set socket data
+            socket.data.roomCode = roomCode;
             socket.data.playerName = playerName;
+            socket.join(roomCode);
 
-            callback({ success: true, roomCode: game.roomCode });
+            console.log(`[Socket] ${playerName} joined/reconnected to room: ${roomCode} (ID: ${socket.id})`);
 
-            // Broadcast updated game state to all players
-            io.to(game.roomCode).emit('gameState', game.getGameState());
-            io.to(game.roomCode).emit('playerJoined', { playerName });
+            callback({ success: true, roomCode });
+
+            // Send current game state to the player who just joined
+            socket.emit('gameState', game.getGameState());
+
+            // If game started, send them their hand (new or reconnected)
+            if (game.gameStarted) {
+                const hand = game.getPlayerHand(socket.id);
+                console.log(`[Socket] Sending hand to ${playerName} (${hand.length} cards)`);
+                socket.emit('yourHand', hand);
+            }
+
+            // Broadcast updated game state to everyone
+            io.to(roomCode).emit('playerJoined', { playerName });
+            io.to(roomCode).emit('gameState', game.getGameState());
         });
 
         // Update game settings (packs)
@@ -138,6 +117,21 @@ module.exports = (io) => {
         });
 
         // Select winner
+        socket.on('swapCards', (cardIds, callback) => {
+            const game = roomManager.getGame(socket.data.roomCode);
+            if (!game) return callback({ success: false, message: 'Game not found' });
+
+            const result = game.swapCards(socket.id, cardIds);
+            callback(result);
+
+            if (result.success) {
+                // Send updated hand to the player
+                socket.emit('yourHand', result.hand);
+                // Broadcast updated game state (for swap counts)
+                io.to(game.roomCode).emit('gameState', game.getGameState());
+            }
+        });
+
         socket.on('selectWinner', (winnerId, callback) => {
             const game = roomManager.getGame(socket.data.roomCode);
             if (!game) {

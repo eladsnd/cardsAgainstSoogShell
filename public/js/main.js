@@ -24,6 +24,7 @@ class App {
         document.getElementById('joinRoomBtn').onclick = () => this.joinRoom();
         document.getElementById('startGameBtn').onclick = () => this.startGame();
         document.getElementById('submitCardsBtn').onclick = () => this.submitCards();
+        document.getElementById('swapCardsBtn').onclick = () => this.swapCards();
         document.getElementById('leaveGameBtn').onclick = () => this.leaveGame();
 
         // Socket Events
@@ -123,6 +124,22 @@ class App {
         });
     }
 
+    swapCards() {
+        if (this.state.selectedCards.length === 0) return;
+        if (this.state.swapsRemaining < this.state.selectedCards.length) {
+            return this.ui.showError('Not enough swaps remaining');
+        }
+
+        this.socket.emit('swapCards', this.state.selectedCards, (res) => {
+            if (res.success) {
+                this.state.selectedCards = [];
+                // Hand will be updated via 'yourHand' event
+            } else {
+                this.ui.showError(res.message);
+            }
+        });
+    }
+
     leaveGame() {
         if (confirm('Leave game?')) {
             this.socket.emit('leaveGame');
@@ -166,6 +183,12 @@ class App {
             }
 
             const myId = this.socket.getId();
+            const me = data.players.find(p => p.id === myId);
+            if (me) {
+                this.state.swapsRemaining = me.swapsRemaining;
+                this.ui.updateSwapsDisplay(me.swapsRemaining);
+            }
+
             const isCzar = data.currentCzarId === myId;
             const czar = data.players.find(p => p.id === data.currentCzarId);
             const czarName = czar ? czar.name : 'Unknown';

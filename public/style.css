@@ -581,3 +581,45 @@ button.secondary {
     content: '...';
   }
 }
+
+/* Card Swapping UI */
+.hand-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.swaps-count {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--accent-blue);
+  background: rgba(0, 122, 255, 0.1);
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+}
+
+.hand-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.hand-actions button {
+  flex: 1;
+  margin: 0;
+}
+
+.hand-actions button.secondary {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hand-actions button.secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.hand-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

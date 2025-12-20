@@ -11,6 +11,7 @@ export class GameState {
         this.hand = [];
         this.selectedCards = [];
         this.gameData = null;
+        this.swapsRemaining = 3;
     }
 
     update(serverState) {

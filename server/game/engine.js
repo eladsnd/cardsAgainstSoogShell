@@ -23,6 +23,30 @@ class GameEngine {
     }
 
     addPlayer(playerId, playerName) {
+        // Check if player with same name already exists (reconnection)
+        const existingPlayer = this.players.find(p => p.name === playerName);
+
+        if (existingPlayer) {
+            console.log(`[Engine] Reconnecting player: ${playerName} (${existingPlayer.id} -> ${playerId})`);
+            const oldId = existingPlayer.id;
+            existingPlayer.id = playerId;
+            existingPlayer.connected = true;
+
+            // Update Czar ID if they were the Czar
+            if (this.currentCzarId === oldId) {
+                this.currentCzarId = playerId;
+            }
+
+            // Update submissions if they had one
+            if (this.submissions.has(oldId)) {
+                const sub = this.submissions.get(oldId);
+                this.submissions.delete(oldId);
+                this.submissions.set(playerId, sub);
+            }
+
+            return true;
+        }
+
         if (this.players.find(p => p.id === playerId)) {
             return false;
         }
@@ -33,7 +57,14 @@ class GameEngine {
             hand: [],
             score: 0,
             connected: true,
+            swapsRemaining: 3,
         };
+
+        // If game already started, deal cards to new player
+        if (this.gameStarted) {
+            console.log(`[Engine] Dealing cards to new player joining mid-game: ${playerName}`);
+            this.dealCards(player, config.HAND_SIZE);
+        }
 
         this.players.push(player);
         return true;
@@ -134,9 +165,10 @@ class GameEngine {
     }
 
     dealCards(player, count) {
+        console.log(`[Engine] Dealing ${count} cards to ${player.name}. Current hand size: ${player.hand.length}`);
         for (let i = 0; i < count; i++) {
             if (this.whiteCardDeck.length === 0) {
-                // Reshuffle discarded cards if deck is empty
+                console.log('[Engine] White card deck empty! Reshuffling discard pile...');
                 this.whiteCardDeck = shuffleArray(this.discardedWhiteCards);
                 this.discardedWhiteCards = [];
             }
@@ -145,6 +177,7 @@ class GameEngine {
                 player.hand.push(this.whiteCardDeck.pop());
             }
         }
+        console.log(`[Engine] New hand size for ${player.name}: ${player.hand.length}`);
     }
 
     startNewRound() {
@@ -152,6 +185,9 @@ class GameEngine {
         this.submissions.clear();
         this.roundWinner = null;
         this.phase = 'playing';
+
+        // Reset swaps for all players
+        this.players.forEach(p => p.swapsRemaining = 3);
 
         // Pick a black card
         if (this.blackCardDeck.length === 0) {
@@ -229,6 +265,49 @@ class GameEngine {
         return { success: true };
     }
 
+    swapCards(playerId, cardIds) {
+        if (this.phase !== 'playing') {
+            return { success: false, message: 'Can only swap during playing phase' };
+        }
+
+        const player = this.players.find(p => p.id === playerId);
+        if (!player) {
+            return { success: false, message: 'Player not found' };
+        }
+
+        if (playerId === this.currentCzarId) {
+            return { success: false, message: 'Czar cannot swap cards' };
+        }
+
+        if (player.swapsRemaining < cardIds.length) {
+            return { success: false, message: `Not enough swaps remaining (have ${player.swapsRemaining})` };
+        }
+
+        // Validate cards are in hand
+        const cardIdStrings = cardIds.map(id => String(id));
+        const cardsToSwap = player.hand.filter(card => cardIdStrings.includes(String(card.id)));
+
+        if (cardsToSwap.length !== cardIds.length) {
+            return { success: false, message: 'Some cards not found in hand' };
+        }
+
+        // Remove from hand
+        player.hand = player.hand.filter(card => !cardIdStrings.includes(String(card.id)));
+
+        // Add to discard pile
+        this.discardedWhiteCards.push(...cardsToSwap);
+
+        // Deal new cards
+        this.dealCards(player, cardsToSwap.length);
+
+        // Decrement swaps
+        player.swapsRemaining -= cardIds.length;
+
+        console.log(`[Engine] ${player.name} swapped ${cardIds.length} cards. Swaps left: ${player.swapsRemaining}`);
+
+        return { success: true, hand: player.hand, swapsRemaining: player.swapsRemaining };
+    }
+
     selectWinner(czarId, winnerId) {
         if (this.phase !== 'judging') {
             return { success: false, message: 'Not in judging phase' };
@@ -282,13 +361,13 @@ class GameEngine {
                 name: p.name,
                 score: p.score,
                 connected: p.connected,
+                swapsRemaining: p.swapsRemaining,
             })),
             gameStarted: this.gameStarted,
             currentBlackCard: this.currentBlackCard,
             currentCzarId: this.currentCzarId,
             phase: this.phase,
             currentRound: this.currentRound,
-            roundWinner: this.roundWinner,
             roundWinner: this.roundWinner,
             submissionCount: this.submissions.size,
             submissions: (this.phase === 'judging' || this.phase === 'roundEnd') ? this.getSubmissions() : [],

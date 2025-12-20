@@ -120,9 +120,15 @@
 
       <!-- Player's Hand -->
       <div id="playerHandSection">
-        <h3 class="white-cards-label">Your Cards</h3>
+        <div class="hand-header">
+          <h3 class="white-cards-label">Your Cards</h3>
+          <div class="swaps-count" id="swapsRemainingDisplay">Swaps left: 3</div>
+        </div>
         <div id="playerHand" class="white-cards-grid"></div>
-        <button id="submitCardsBtn" class="primary" style="margin-top: 1rem; width: 100%;">Submit Answer</button>
+        <div class="hand-actions">
+          <button id="submitCardsBtn" class="primary">Submit Answer</button>
+          <button id="swapCardsBtn" class="secondary">Swap Selected</button>
+        </div>
       </div>
     </div>
   </div>
