@@ -53,8 +53,10 @@ class App {
     }
 
     createRoom() {
-        const name = document.getElementById('playerNameInput').value.trim();
-        if (!name) return this.ui.showError('Enter name');
+        let name = document.getElementById('playerNameInput').value.trim();
+        if (!name) {
+            name = this.getRandomName();
+        }
 
         this.state.playerName = name;
         this.socket.emit('createRoom', name, (res) => {
@@ -71,9 +73,12 @@ class App {
 
     joinRoom() {
         const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
-        const name = document.getElementById('playerNameInput').value.trim();
+        let name = document.getElementById('playerNameInput').value.trim();
 
-        if (!name || !code) return this.ui.showError('Enter name and code');
+        if (!code) return this.ui.showError('Enter room code');
+        if (!name) {
+            name = this.getRandomName();
+        }
 
         this.state.playerName = name;
         this.socket.emit('joinRoom', code, name, (res) => {
@@ -176,6 +181,8 @@ class App {
                 if (phaseIndicator) phaseIndicator.textContent = isCzar ? 'Wait for players to submit...' : 'Pick your cards!';
                 if (!isCzar && handSection) {
                     handSection.style.display = 'block';
+                    // Ensure hand is rendered when phase changes to playing
+                    this.ui.renderHand(this.state.hand, this.state.selectedCards, this.onCardSelect.bind(this));
                 }
             } else if (data.phase === 'judging') {
                 if (phaseIndicator) phaseIndicator.textContent = isCzar ? 'Pick the winner!' : 'Czar is judging...';
@@ -210,15 +217,51 @@ class App {
     }
 
     onCardSelect(cardId) {
+        if (cardId === undefined || cardId === null) return;
+
+        const idStr = String(cardId);
+        const pickCount = this.state.pickCount;
+
+        console.log(`[Selection] Card: ${idStr}, Type: ${typeof cardId}, PickCount: ${pickCount}`);
+        console.log(`[Selection] Current selected:`, this.state.selectedCards);
+
         // Selection logic
-        if (this.state.selectedCards.includes(cardId)) {
-            this.state.selectedCards = this.state.selectedCards.filter(id => id !== cardId);
+        if (this.state.selectedCards.includes(idStr)) {
+            // Deselect if already selected
+            console.log(`[Selection] Deselecting ${idStr}`);
+            this.state.selectedCards = this.state.selectedCards.filter(id => id !== idStr);
         } else {
-            if (this.state.selectedCards.length < this.state.pickCount) {
-                this.state.selectedCards.push(cardId);
+            if (pickCount === 1) {
+                // Auto-replace for single pick
+                console.log(`[Selection] Auto-replacing with ${idStr}`);
+                this.state.selectedCards = [idStr];
+            } else {
+                // Add if under limit for multi-pick
+                if (this.state.selectedCards.length < pickCount) {
+                    console.log(`[Selection] Adding ${idStr}`);
+                    this.state.selectedCards.push(idStr);
+                } else {
+                    console.log(`[Selection] Limit reached (${pickCount})`);
+                }
             }
         }
         this.ui.renderHand(this.state.hand, this.state.selectedCards, this.onCardSelect.bind(this));
+    }
+
+    getRandomName() {
+        const adjectives = [
+            'Angry', 'Happy', 'Lucky', 'Cute', 'Dissapointed', 'Sleepy',
+            'Hungry', 'Brave', 'Silly', 'Grumpy', 'Fancy', 'Wild'
+        ];
+        const animals = [
+            'Llama', 'Giraffe', 'Dog', 'Fox', 'Cat', 'Panda',
+            'Penguin', 'Koala', 'Tiger', 'Lion', 'Bear', 'Rabbit'
+        ];
+
+        const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+        const animal = animals[Math.floor(Math.random() * animals.length)];
+
+        return `${adj} ${animal}`;
     }
 
     onSubmissions(submissions) {
@@ -255,13 +298,6 @@ class App {
                 <div class="winner-name">${winnerName} wins!</div>
                 <div class="winner-cards">${winningCardsText}</div>
             `;
-
-            // Only Czar can click next round
-            const myId = this.socket.getId();
-            // We need to know who the NEW czar is, or if the current user WAS the czar.
-            // For simplicity, let anyone click next round for now, or check if we are the czar of the COMPLETED round.
-            // Better: The server rotates the Czar at the START of the new round.
-            // So for "Next Round" button, anyone can click it to trigger the server.
 
             nextRoundBtn.onclick = () => {
                 this.socket.emit('nextRound', (res) => {

@@ -95,7 +95,7 @@ export class UIRenderer {
         if (!card) return;
 
         const text = card.text.replace(/_/g, '____');
-        const pickText = card.pick > 1 ? `(PICK ${card.pick})` : '';
+        const pickText = `(PICK ${card.pick || 1})`;
 
         this.elements.blackCard.innerHTML = `
             <div class="card-text">${text}</div>
@@ -108,14 +108,34 @@ export class UIRenderer {
     renderHand(cards, selectedIds = [], onSelect) {
         this.elements.playerHand.innerHTML = '';
 
+        // Ensure selectedIds is an array of strings
+        const safeSelectedIds = (Array.isArray(selectedIds) ? selectedIds : []).map(id => String(id));
+        console.log(`[Renderer] Rendering hand. Selected IDs:`, safeSelectedIds);
+
         cards.forEach(card => {
+            const cardIdStr = String(card.id);
+            // Robust selection check: cardIdStr must be present in safeSelectedIds
+            const isSelected = card.id !== undefined && card.id !== null && safeSelectedIds.includes(cardIdStr);
+            console.log(`[Renderer] Card: ${cardIdStr}, isSelected: ${isSelected}`);
+            const selectedIndex = isSelected ? safeSelectedIds.indexOf(cardIdStr) : -1;
+
             const el = document.createElement('div');
-            el.className = `card white small ${selectedIds.includes(card.id) ? 'selected' : ''}`;
-            el.innerHTML = `<div class="card-text">${card.text}</div>`;
+            el.className = `card white small ${isSelected ? 'selected' : ''}`;
+
+            // Add selection order badge if multi-pick
+            let badgeHtml = '';
+            if (isSelected && safeSelectedIds.length > 1) {
+                badgeHtml = `<div class="selection-badge">${selectedIndex + 1}</div>`;
+            }
+
+            el.innerHTML = `
+                ${badgeHtml}
+                <div class="card-text">${card.text}</div>
+            `;
 
             this.applyTextDirection(el.querySelector('.card-text'), card.text);
 
-            el.onclick = () => onSelect(card.id);
+            el.onclick = () => onSelect(cardIdStr);
             this.elements.playerHand.appendChild(el);
         });
     }

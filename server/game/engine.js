@@ -72,14 +72,36 @@ class GameEngine {
         const customDecks = require('./deck-manager').getAll();
         packsToUse.forEach(id => {
             if (customDecks[id]) {
-                allBlackCards = [...allBlackCards, ...customDecks[id].blackCards];
-                allWhiteCards = [...allWhiteCards, ...customDecks[id].whiteCards];
+                // Ensure custom cards have IDs
+                const blackWithIds = customDecks[id].blackCards.map((c, i) => ({
+                    ...c,
+                    id: c.id || `custom_${id}_black_${i}`
+                }));
+                const whiteWithIds = customDecks[id].whiteCards.map((c, i) => ({
+                    ...c,
+                    id: c.id || `custom_${id}_white_${i}`
+                }));
+
+                allBlackCards = [...allBlackCards, ...blackWithIds];
+                allWhiteCards = [...allWhiteCards, ...whiteWithIds];
             }
         });
 
         if (allBlackCards.length === 0 || allWhiteCards.length === 0) {
             return { success: false, message: 'No cards in selected packs' };
         }
+
+        // Final safety pass: ensure every card has a unique string ID
+        const timestamp = Date.now();
+        allBlackCards = allBlackCards.map((c, i) => ({
+            ...c,
+            id: String((c.id !== undefined && c.id !== null) ? c.id : `b_${i}_${timestamp}_${Math.random().toString(36).substr(2, 5)}`),
+            pick: c.pick || 1
+        }));
+        allWhiteCards = allWhiteCards.map((c, i) => ({
+            ...c,
+            id: String((c.id !== undefined && c.id !== null) ? c.id : `w_${i}_${timestamp}_${Math.random().toString(36).substr(2, 5)}`)
+        }));
 
         this.blackCardDeck = shuffleArray(allBlackCards);
         this.whiteCardDeck = shuffleArray(allWhiteCards);
