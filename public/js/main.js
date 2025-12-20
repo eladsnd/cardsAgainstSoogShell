@@ -227,11 +227,9 @@ class App {
     }
 
     selectWinner(playerId) {
-        if (confirm('Select this as the winner?')) {
-            this.socket.emit('selectWinner', playerId, (res) => {
-                if (!res.success) this.ui.showError(res.message);
-            });
-        }
+        this.socket.emit('selectWinner', playerId, (res) => {
+            if (!res.success) this.ui.showError(res.message);
+        });
     }
 
     onRoundWinner(data) {

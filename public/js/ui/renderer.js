@@ -57,6 +57,10 @@ export class UIRenderer {
     }
 
     updatePlayerList(players) {
+        // Update player count span
+        const countSpan = document.getElementById('playerCount');
+        if (countSpan) countSpan.textContent = players.length;
+
         this.elements.playerList.innerHTML = players.map(p => `
             <div class="player-item ${p.connected ? '' : 'disconnected'}">
                 <span class="player-name">${p.name}</span>
@@ -133,6 +137,22 @@ export class UIRenderer {
 
             if (isCzar) {
                 group.classList.add('clickable');
+
+                // Add "Pick this" indicator
+                const indicator = document.createElement('div');
+                indicator.className = 'pick-indicator';
+                indicator.textContent = 'PICK THIS';
+                indicator.style.textAlign = 'center';
+                indicator.style.fontSize = '0.8rem';
+                indicator.style.fontWeight = '800';
+                indicator.style.color = 'var(--accent-blue)';
+                indicator.style.marginTop = '0.5rem';
+                indicator.style.opacity = '0';
+                indicator.style.transition = 'opacity 0.2s';
+                group.appendChild(indicator);
+
+                group.onmouseenter = () => indicator.style.opacity = '1';
+                group.onmouseleave = () => indicator.style.opacity = '0';
                 group.onclick = () => onSelectWinner(sub.playerId);
             }
 

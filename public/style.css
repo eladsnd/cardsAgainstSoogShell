@@ -323,6 +323,7 @@ button.secondary {
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
+  margin-bottom: 2rem;
 }
 
 .score-item {
@@ -333,29 +334,111 @@ button.secondary {
   font-size: 0.9rem;
 }
 
-.black-card-container {
-  margin-bottom: 2rem;
-  display: flex;
+/* Card Grids */
+.white-cards-grid,
+.submissions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
   justify-content: center;
 }
 
+.submission-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: var(--bg-glass);
+  border-radius: 16px;
+  border: 2px solid transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.submission-group.clickable {
+  cursor: pointer;
+}
+
+.submission-group.clickable:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--accent-blue);
+  transform: translateY(-8px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+}
+
+.submission-group.selected {
+  border-color: var(--accent-blue);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+/* Card Styles */
 .card {
   width: 100%;
-  max-width: 400px;
+  max-width: 320px;
+  min-height: 220px;
   aspect-ratio: 2/3;
   border-radius: 16px;
-  padding: 2rem;
+  padding: 1.5rem;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  font-size: 1.3rem;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: 1.1rem;
   font-weight: 600;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  border-radius: 16px;
-  margin: 2rem 0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  position: relative;
+  user-select: none;
+  margin: 0 auto;
+}
+
+.card.black {
+  background: #1e1e1e;
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  font-size: 1.2rem;
+}
+
+.card.white {
+  background: white;
+  color: #1e1e1e;
+  border: 1px solid #ddd;
+}
+
+.card.selected {
+  border: 4px solid var(--accent-blue) !important;
+  box-shadow: 0 0 25px rgba(59, 130, 246, 0.6) !important;
+  transform: translateY(-8px) scale(1.02);
+  z-index: 5;
+}
+
+.card.small {
+  font-size: 0.95rem;
+  padding: 1.25rem;
+}
+
+.card.white.small:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+
+.card-text {
+  line-height: 1.4;
+}
+
+.card-pick {
+  font-size: 0.8rem;
+  text-align: right;
+  opacity: 0.7;
+  font-weight: 800;
+}
+
+.black-card-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem 0;
+  width: 100%;
 }
 
 .winner-announcement {
@@ -419,13 +502,16 @@ button.secondary {
   }
 
   .card {
-    font-size: 1.1rem;
-    padding: 1.5rem;
+    font-size: 1rem;
+    padding: 1.25rem;
+    max-width: 250px;
+    min-height: 180px;
   }
 
   .white-cards-grid,
   .submissions-grid {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 1rem;
   }
 
   .game-header {
@@ -436,13 +522,6 @@ button.secondary {
   .scoreboard {
     width: 100%;
   }
-}
-
-/* Small card variant for hand */
-.card.small {
-  max-width: 250px;
-  font-size: 1rem;
-  padding: 1.5rem;
 }
 
 /* Loading animation */

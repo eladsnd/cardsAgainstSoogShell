@@ -8,7 +8,7 @@ module.exports = {
     PORT: process.env.PORT || 3000,
 
     // Game settings
-    MIN_PLAYERS: 3,
+    MIN_PLAYERS: 2,
     MAX_PLAYERS: 10,
     WINNING_SCORE: 7,
     HAND_SIZE: 10,
