@@ -58,14 +58,14 @@ export class UIRenderer {
         this.elements.displayRoomCode.textContent = code;
     }
 
-    updatePlayerList(players) {
+    updatePlayerList(players, myId) {
         // Update player count span
         const countSpan = document.getElementById('playerCount');
         if (countSpan) countSpan.textContent = players.length;
 
         this.elements.playerList.innerHTML = players.map(p => `
             <div class="player-item ${p.connected ? '' : 'disconnected'}">
-                <span class="player-name">${p.name}</span>
+                <span class="player-name">${p.name} ${p.id === myId ? '<span class="you-indicator">(YOU)</span>' : ''}</span>
                 <span class="player-score">${p.score} 🏆</span>
             </div>
         `).join('');
@@ -97,10 +97,10 @@ export class UIRenderer {
         }
     }
 
-    updateScoreboard(players) {
+    updateScoreboard(players, myId) {
         this.elements.scoreboard.innerHTML = players.map(p => `
-            <div class="score-item ${p.id === p.currentCzarId ? 'czar' : ''}">
-                <span class="name">${p.name}</span>
+            <div class="score-item ${p.id === p.currentCzarId ? 'czar' : ''} ${p.id === myId ? 'me' : ''}">
+                <span class="name">${p.name} ${p.id === myId ? '<span class="you-indicator">(YOU)</span>' : ''}</span>
                 <span class="score">${p.score}</span>
             </div>
         `).join('');
@@ -260,6 +260,41 @@ export class UIRenderer {
             div.appendChild(label);
             container.appendChild(div);
         });
+    }
+
+    renderGameOver(winner, leaderboard) {
+        const section = document.getElementById('gameOverSection');
+        const winnerName = document.getElementById('gameWinnerName');
+
+        if (section && winnerName) {
+            section.style.display = 'flex';
+            winnerName.textContent = `${winner.name} Won the Game!`;
+
+            // Render Leaderboard
+            if (leaderboard) {
+                const leaderboardHtml = `
+                    <div class="leaderboard">
+                        <h4>Final Standings</h4>
+                        ${leaderboard.map((p, i) => `
+                            <div class="leaderboard-item ${i === 0 ? 'winner' : ''}">
+                                <span class="rank">#${i + 1}</span>
+                                <span class="name">${p.name}</span>
+                                <span class="score">${p.score} pts</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+
+                // Find or create leaderboard container
+                let container = document.getElementById('leaderboardContainer');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.id = 'leaderboardContainer';
+                    winnerName.after(container);
+                }
+                container.innerHTML = leaderboardHtml;
+            }
+        }
     }
 
     applyTextDirection(element, text) {

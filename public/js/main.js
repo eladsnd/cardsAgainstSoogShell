@@ -160,7 +160,8 @@ class App {
         }
 
         this.state.update(data);
-        this.ui.updatePlayerList(data.players);
+        const myId = this.socket.getId();
+        this.ui.updatePlayerList(data.players, myId);
 
         if (data.phase === 'lobby') {
             // Determine if I am the host (first player)
@@ -207,7 +208,7 @@ class App {
                 ...p,
                 isCzar: p.id === data.currentCzarId
             }));
-            this.ui.updateScoreboard(playersWithCzar);
+            this.ui.updateScoreboard(playersWithCzar, myId);
 
             // Phase Logic
             const handSection = document.getElementById('playerHandSection');
@@ -241,6 +242,11 @@ class App {
                 if (data.roundWinner) {
                     const winner = data.players.find(p => p.id === data.roundWinner);
                     document.getElementById('winnerSubmission').textContent = `${winner ? winner.name : 'Someone'} won!`;
+                }
+            } else if (data.phase === 'gameOver') {
+                if (gameOverSection) gameOverSection.style.display = 'flex';
+                if (data.winner && data.leaderboard) {
+                    this.ui.renderGameOver(data.winner, data.leaderboard);
                 }
             }
         }
@@ -321,13 +327,22 @@ class App {
 
     selectWinner(playerId) {
         this.socket.emit('selectWinner', playerId, (res) => {
-            if (!res.success) this.ui.showError(res.message);
+            if (res.success) {
+                if (res.gameOver) {
+                    this.ui.renderGameOver(res.winner, res.leaderboard);
+                }
+            } else {
+                this.ui.showError(res.message);
+            }
         });
     }
 
     onRoundWinner(data) {
         // Show winner UI
         console.log('Round winner:', data);
+        if (data.gameOver) {
+            this.ui.renderGameOver(data.winner, data.leaderboard);
+        }
 
         const winnerSection = document.getElementById('roundWinnerSection');
         const winnerSubmission = document.getElementById('winnerSubmission');

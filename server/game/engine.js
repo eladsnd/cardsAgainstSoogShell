@@ -19,7 +19,9 @@ class GameEngine {
         this.whiteCardDeck = [];
         this.discardedWhiteCards = [];
         this.currentRound = 0;
-        this.phase = 'lobby'; // lobby, playing, judging, roundEnd
+        this.phase = 'lobby'; // lobby, playing, judging, roundEnd, gameOver
+        this.finalWinner = null;
+        this.finalLeaderboard = null;
     }
 
     addPlayer(playerId, playerName) {
@@ -191,9 +193,9 @@ class GameEngine {
 
         // Pick a black card
         if (this.blackCardDeck.length === 0) {
-            // This shouldn't happen often, but if it does, we need to reshuffle
-            // For now, we'll just reload the base cards to avoid a crash
-            this.blackCardDeck = shuffleArray(packs.find(p => p.id === 'base').black);
+            console.log('[Engine] Black card deck empty. Game over.');
+            this.endGame();
+            return false;
         }
         this.currentBlackCard = this.blackCardDeck.pop();
 
@@ -201,6 +203,7 @@ class GameEngine {
         const currentCzarIndex = this.players.findIndex(p => p.id === this.currentCzarId);
         const nextCzarIndex = (currentCzarIndex + 1) % this.players.length;
         this.currentCzarId = this.players[nextCzarIndex].id;
+        return true;
     }
 
     submitCard(playerId, cardIds) {
@@ -329,7 +332,8 @@ class GameEngine {
 
             // Check for game winner
             if (winner.score >= config.WINNING_SCORE) {
-                return { success: true, gameOver: true, winner };
+                this.endGame(winner);
+                return { success: true, gameOver: true, winner: this.finalWinner, leaderboard: this.finalLeaderboard };
             }
         }
 
@@ -349,8 +353,26 @@ class GameEngine {
             }
         });
 
-        this.startNewRound();
-        return { success: true };
+        const roundStarted = this.startNewRound();
+        if (!roundStarted) {
+            // Game over because deck is empty
+            return {
+                success: true,
+                gameOver: true,
+                winner: this.finalWinner,
+                leaderboard: this.finalLeaderboard
+            };
+        }
+
+        return { success: true, gameOver: false };
+    }
+
+    endGame(winner = null) {
+        this.phase = 'gameOver';
+        const sortedPlayers = [...this.players].sort((a, b) => b.score - a.score);
+        this.finalLeaderboard = sortedPlayers.map(p => ({ name: p.name, score: p.score }));
+        this.finalWinner = winner || sortedPlayers[0];
+        console.log(`[Engine] Game Over. Winner: ${this.finalWinner.name}`);
     }
 
     getGameState() {
@@ -372,7 +394,9 @@ class GameEngine {
             submissionCount: this.submissions.size,
             submissions: (this.phase === 'judging' || this.phase === 'roundEnd') ? this.getSubmissions() : [],
             selectedPacks: this.selectedPacks,
-            availablePacks: this.getAvailablePacks()
+            availablePacks: this.getAvailablePacks(),
+            winner: this.finalWinner,
+            leaderboard: this.finalLeaderboard
         };
     }
 
