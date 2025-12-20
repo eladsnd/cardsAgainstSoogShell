@@ -291,6 +291,7 @@ class GameEngine {
             roundWinner: this.roundWinner,
             roundWinner: this.roundWinner,
             submissionCount: this.submissions.size,
+            submissions: (this.phase === 'judging' || this.phase === 'roundEnd') ? this.getSubmissions() : [],
             selectedPacks: this.selectedPacks,
             availablePacks: this.getAvailablePacks()
         };

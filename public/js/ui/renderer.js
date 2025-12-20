@@ -154,7 +154,15 @@ export class UIRenderer {
     }
 
     renderSubmissions(submissions, isCzar, onSelectWinner) {
-        this.elements.submissions.innerHTML = '';
+        const grid = this.elements.submissions;
+        const section = document.getElementById('submissionsSection');
+        const label = section?.querySelector('.white-cards-label');
+
+        if (label) {
+            label.textContent = isCzar ? 'Pick the Funniest Answer!' : 'Submissions';
+        }
+
+        grid.innerHTML = '';
 
         submissions.forEach(sub => {
             const group = document.createElement('div');
@@ -191,6 +199,12 @@ export class UIRenderer {
 
             this.elements.submissions.appendChild(group);
         });
+    }
+
+    clearSubmissions() {
+        if (this.elements.submissions) {
+            this.elements.submissions.innerHTML = '';
+        }
     }
 
     renderPackSelection(packs, selectedIds, isHost, onToggle) {

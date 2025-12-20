@@ -139,6 +139,7 @@ class App {
         if (data.phase === 'playing' && this.state.currentPhase !== 'playing') {
             console.log('[State] New round started, clearing selection');
             this.state.selectedCards = [];
+            this.ui.clearSubmissions();
         }
 
         this.state.update(data);
@@ -208,6 +209,9 @@ class App {
             } else if (data.phase === 'judging') {
                 if (phaseIndicator) phaseIndicator.textContent = isCzar ? 'Pick the winner!' : 'Czar is judging...';
                 if (submissionsSection) submissionsSection.style.display = 'block';
+                if (data.submissions && data.submissions.length > 0) {
+                    this.ui.renderSubmissions(data.submissions, isCzar, this.selectWinner.bind(this));
+                }
             } else if (data.phase === 'roundEnd') {
                 if (phaseIndicator) phaseIndicator.textContent = 'Round Over!';
                 if (winnerSection) winnerSection.style.display = 'block';
@@ -288,8 +292,8 @@ class App {
     }
 
     onSubmissions(submissions) {
-        // Only Czar receives this
-        this.ui.renderSubmissions(submissions, true, this.selectWinner.bind(this));
+        const isCzar = this.state.gameData?.currentCzarId === this.socket.getId();
+        this.ui.renderSubmissions(submissions, isCzar, this.selectWinner.bind(this));
     }
 
     selectWinner(playerId) {

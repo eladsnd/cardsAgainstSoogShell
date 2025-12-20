@@ -131,7 +131,8 @@ module.exports = (io) => {
             if (result.success) {
                 io.to(game.roomCode).emit('gameState', game.getGameState());
                 if (game.phase === 'judging') {
-                    io.to(game.currentCzarId).emit('submissions', game.getSubmissions());
+                    // Send submissions to everyone so they can see what's being judged
+                    io.to(game.roomCode).emit('submissions', game.getSubmissions());
                 }
             }
         });
