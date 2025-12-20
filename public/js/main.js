@@ -99,14 +99,25 @@ class App {
     }
 
     submitCards() {
-        if (this.state.selectedCards.length !== this.state.pickCount) {
-            return this.ui.showError(`Select ${this.state.pickCount} cards`);
+        console.log('[Submit] Button clicked');
+        const selectedCount = this.state.selectedCards.length;
+        const pickCount = this.state.pickCount;
+        console.log(`[Submit] Selected: ${selectedCount}, Required: ${pickCount}`);
+        console.log(`[Submit] Selected IDs:`, JSON.stringify(this.state.selectedCards));
+
+        if (selectedCount !== pickCount) {
+            console.warn(`[Submit] Validation failed: ${selectedCount} !== ${pickCount}`);
+            return this.ui.showError(`Select ${pickCount} cards`);
         }
+
+        console.log('[Submit] Sending to server...');
         this.socket.emit('submitCards', this.state.selectedCards, (res) => {
+            console.log('[Submit] Server response:', res);
             if (res.success) {
                 this.state.selectedCards = [];
                 this.ui.renderHand(this.state.hand, [], this.onCardSelect.bind(this));
             } else {
+                console.error('[Submit] Server error:', res.message);
                 this.ui.showError(res.message);
             }
         });
@@ -123,6 +134,13 @@ class App {
     // Event Handlers
     onGameState(data) {
         console.log('onGameState:', data);
+
+        // If we just entered the playing phase, clear previous selections
+        if (data.phase === 'playing' && this.state.currentPhase !== 'playing') {
+            console.log('[State] New round started, clearing selection');
+            this.state.selectedCards = [];
+        }
+
         this.state.update(data);
         this.ui.updatePlayerList(data.players);
 
@@ -141,7 +159,10 @@ class App {
             }
         } else if (data.gameStarted) {
             this.ui.showScreen('game');
-            this.ui.renderBlackCard(data.currentBlackCard);
+            if (data.currentBlackCard) {
+                console.log(`[State] Current Black Card: "${data.currentBlackCard.text}", Pick: ${data.currentBlackCard.pick}`);
+                this.ui.renderBlackCard(data.currentBlackCard);
+            }
 
             const myId = this.socket.getId();
             const isCzar = data.currentCzarId === myId;
@@ -212,6 +233,8 @@ class App {
     }
 
     onHandUpdate(hand) {
+        console.log('[Hand] Received hand update:', hand);
+        console.log('[Hand] Card IDs:', hand.map(c => c.id));
         this.state.hand = hand;
         this.ui.renderHand(hand, this.state.selectedCards, this.onCardSelect.bind(this));
     }

@@ -46,9 +46,9 @@ export class UIRenderer {
 
     showError(message, duration = 4000) {
         this.elements.errorMessage.textContent = message;
-        this.elements.errorMessage.classList.add('show');
+        this.elements.errorMessage.style.display = 'block';
         setTimeout(() => {
-            this.elements.errorMessage.classList.remove('show');
+            this.elements.errorMessage.style.display = 'none';
         }, duration);
     }
 
@@ -67,6 +67,19 @@ export class UIRenderer {
                 <span class="player-score">${p.score} 🏆</span>
             </div>
         `).join('');
+
+        // Update "Need at least 2 players" message
+        const startBtn = document.getElementById('startGameBtn');
+        const subtitle = startBtn?.nextElementSibling;
+        if (subtitle && subtitle.classList.contains('subtitle')) {
+            if (players.length >= 2) {
+                subtitle.style.display = 'none';
+                startBtn.disabled = false;
+            } else {
+                subtitle.style.display = 'block';
+                startBtn.disabled = true;
+            }
+        }
     }
 
     updateGameInfo(round, czarName, isCzar, submissionCount, totalPlayers) {

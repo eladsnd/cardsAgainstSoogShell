@@ -49,6 +49,10 @@ class GameEngine {
     }
 
     startGame(packIds = []) {
+        if (this.gameStarted) {
+            return { success: false, message: 'Game already started' };
+        }
+
         if (this.players.length < config.MIN_PLAYERS) {
             return { success: false, message: `Need at least ${config.MIN_PLAYERS} players to start` };
         }
@@ -69,15 +73,21 @@ class GameEngine {
         });
 
         // 2. Custom decks
-        const customDecks = require('./deck-manager').getAll();
+        const deckManager = require('./deck-manager');
+        deckManager.load(); // Reload from disk to pick up manual edits
+        const customDecks = deckManager.getAll();
         packsToUse.forEach(id => {
             if (customDecks[id]) {
                 // Ensure custom cards have IDs
-                const blackWithIds = customDecks[id].blackCards.map((c, i) => ({
+                // Support both 'black' and 'blackCards' keys
+                const blackCards = customDecks[id].black || customDecks[id].blackCards || [];
+                const whiteCards = customDecks[id].white || customDecks[id].whiteCards || [];
+
+                const blackWithIds = blackCards.map((c, i) => ({
                     ...c,
                     id: c.id || `custom_${id}_black_${i}`
                 }));
-                const whiteWithIds = customDecks[id].whiteCards.map((c, i) => ({
+                const whiteWithIds = whiteCards.map((c, i) => ({
                     ...c,
                     id: c.id || `custom_${id}_white_${i}`
                 }));
@@ -96,12 +106,14 @@ class GameEngine {
         allBlackCards = allBlackCards.map((c, i) => ({
             ...c,
             id: String((c.id !== undefined && c.id !== null) ? c.id : `b_${i}_${timestamp}_${Math.random().toString(36).substr(2, 5)}`),
-            pick: c.pick || 1
+            pick: Number(c.pick || 1)
         }));
         allWhiteCards = allWhiteCards.map((c, i) => ({
             ...c,
             id: String((c.id !== undefined && c.id !== null) ? c.id : `w_${i}_${timestamp}_${Math.random().toString(36).substr(2, 5)}`)
         }));
+
+        console.log(`[Engine] Starting game with ${allBlackCards.length} black and ${allWhiteCards.length} white cards.`);
 
         this.blackCardDeck = shuffleArray(allBlackCards);
         this.whiteCardDeck = shuffleArray(allWhiteCards);
@@ -111,6 +123,7 @@ class GameEngine {
 
         // Deal initial hands to all players
         this.players.forEach(player => {
+            player.hand = []; // Clear any existing cards
             this.dealCards(player, config.HAND_SIZE);
         });
 
@@ -142,7 +155,9 @@ class GameEngine {
 
         // Pick a black card
         if (this.blackCardDeck.length === 0) {
-            this.blackCardDeck = shuffleArray(blackCards);
+            // This shouldn't happen often, but if it does, we need to reshuffle
+            // For now, we'll just reload the base cards to avoid a crash
+            this.blackCardDeck = shuffleArray(packs.find(p => p.id === 'base').black);
         }
         this.currentBlackCard = this.blackCardDeck.pop();
 
@@ -153,6 +168,7 @@ class GameEngine {
     }
 
     submitCard(playerId, cardIds) {
+        console.log(`[Engine] submitCard from ${playerId}:`, cardIds);
         if (this.phase !== 'playing') {
             return { success: false, message: 'Not in playing phase' };
         }
@@ -170,20 +186,36 @@ class GameEngine {
             return { success: false, message: 'Player not found' };
         }
 
-        // Validate cards are in player's hand
-        const cardsToSubmit = cardIds.map(id =>
-            player.hand.find(card => card.id === id)
-        );
+        // Validate number of cards
+        if (!this.currentBlackCard || cardIds.length !== this.currentBlackCard.pick) {
+            const required = this.currentBlackCard ? this.currentBlackCard.pick : 1;
+            return { success: false, message: `Must select ${required} cards` };
+        }
 
-        if (cardsToSubmit.some(card => !card)) {
-            return { success: false, message: 'Invalid cards' };
+        // Validate cards are in player's hand
+        // Use robust string comparison for IDs
+        const cardsToSubmit = [];
+        const handIds = player.hand.map(c => String(c.id));
+
+        for (const id of cardIds) {
+            const idStr = String(id);
+            const card = player.hand.find(c => String(c.id) === idStr);
+            if (!card) {
+                console.error(`[Engine] Card ${idStr} not found in ${player.name}'s hand. Hand IDs:`, handIds);
+                return {
+                    success: false,
+                    message: `Card ${idStr} not in hand. Your hand: ${handIds.join(', ')}`
+                };
+            }
+            cardsToSubmit.push(card);
         }
 
         // Store submission
         this.submissions.set(playerId, cardsToSubmit);
 
-        // Remove cards from hand
-        player.hand = player.hand.filter(card => !cardIds.includes(card.id));
+        // Remove cards from hand - use robust comparison
+        const cardIdStrings = cardIds.map(id => String(id));
+        player.hand = player.hand.filter(card => !cardIdStrings.includes(String(card.id)));
 
         // Add to discard pile
         this.discardedWhiteCards.push(...cardsToSubmit);

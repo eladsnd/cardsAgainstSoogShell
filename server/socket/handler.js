@@ -116,13 +116,16 @@ module.exports = (io) => {
 
         // Submit cards
         socket.on('submitCards', (cardIds, callback) => {
+            console.log(`[Socket] submitCards from ${socket.id} (${socket.data.playerName}):`, cardIds);
             const game = roomManager.getGame(socket.data.roomCode);
             if (!game) {
+                console.error(`[Socket] Room not found for submission: ${socket.data.roomCode}`);
                 callback({ success: false, message: 'Room not found' });
                 return;
             }
 
             const result = game.submitCard(socket.id, cardIds);
+            console.log(`[Socket] submitCard result:`, result);
             callback(result);
 
             if (result.success) {

@@ -5,7 +5,7 @@
   "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js",
-    "dev": "node server/index.js",
+    "dev": "nodemon server/index.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
@@ -27,6 +27,7 @@
   },
   "devDependencies": {
     "eslint": "^8.54.0",
+    "nodemon": "^3.0.1",
     "prettier": "^3.1.0"
   }
 }
