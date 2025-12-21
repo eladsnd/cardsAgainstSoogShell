@@ -301,9 +301,17 @@ button.secondary {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 0 1rem;
+}
+
+#leaveGameBtn {
+  width: auto;
+  padding: 0.5rem 1rem;
+  margin: 0;
+  font-size: 0.9rem;
+  height: auto;
+  min-height: unset;
 }
 
 .round-info {
@@ -531,6 +539,23 @@ button.secondary {
     letter-spacing: 0.3rem;
   }
 
+  .game-over-screen {
+    flex-direction: column;
+    padding: 1.5rem;
+    gap: 1rem;
+  }
+
+  .game-over-screen .winner-announcement {
+    font-size: 1.8rem;
+  }
+
+  #newGameBtn {
+    width: auto;
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+    margin-top: 1rem;
+  }
+
   .card {
     font-size: 1rem;
     padding: 1.25rem;
@@ -551,6 +576,19 @@ button.secondary {
 
   .scoreboard {
     width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .game-header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  #leaveGameBtn {
+    order: -1;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
   }
 }
 

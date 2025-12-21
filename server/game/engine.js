@@ -109,8 +109,13 @@ class GameEngine {
         const deckManager = require('./deck-manager');
         deckManager.load(); // Reload from disk to pick up manual edits
         const customDecks = deckManager.getAll();
+
+        console.log(`[Engine] Packs to use: ${packsToUse.join(', ')}`);
+        console.log(`[Engine] Available custom decks: ${Object.keys(customDecks).join(', ')}`);
+
         packsToUse.forEach(id => {
             if (customDecks[id]) {
+                console.log(`[Engine] Adding custom deck: ${id}`);
                 // Ensure custom cards have IDs
                 // Support both 'black' and 'blackCards' keys
                 const blackCards = customDecks[id].black || customDecks[id].blackCards || [];
@@ -127,10 +132,13 @@ class GameEngine {
 
                 allBlackCards = [...allBlackCards, ...blackWithIds];
                 allWhiteCards = [...allWhiteCards, ...whiteWithIds];
+            } else if (id.startsWith('deck_')) {
+                console.warn(`[Engine] Custom deck ${id} not found in manager!`);
             }
         });
 
         if (allBlackCards.length === 0 || allWhiteCards.length === 0) {
+            console.error(`[Engine] No cards found! Black: ${allBlackCards.length}, White: ${allWhiteCards.length}`);
             return { success: false, message: 'No cards in selected packs' };
         }
 

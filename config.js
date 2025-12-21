@@ -15,7 +15,7 @@ module.exports = {
 
     // Room settings
     ROOM_CODE_LENGTH: 4,
-    ROOM_CODE_CHARS: 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789',
+    ROOM_CODE_CHARS: 'ABCDEFGHJKLMNPQRSTUVWXYZ',
 
     // Session settings
     SESSION_TIMEOUT_MS: 3600000, // 1 hour

@@ -26,6 +26,7 @@ class App {
         document.getElementById('submitCardsBtn').onclick = () => this.submitCards();
         document.getElementById('swapCardsBtn').onclick = () => this.swapCards();
         document.getElementById('leaveGameBtn').onclick = () => this.leaveGame();
+        document.getElementById('newGameBtn').onclick = () => location.reload();
 
         // Socket Events
         this.socket.on('gameState', (data) => this.onGameState(data));
