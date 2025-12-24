@@ -229,6 +229,11 @@ class App {
             const winnerSection = document.getElementById('roundWinnerSection');
             const gameOverSection = document.getElementById('gameOverSection');
             const phaseIndicator = document.getElementById('phaseIndicator');
+            const endGameBtn = document.getElementById('endGameBtn');
+
+            // Show/hide End Game button based on host status
+            const isHost = data.players[0]?.id === this.socket.getId();
+            if (endGameBtn) endGameBtn.style.display = isHost ? 'inline-block' : 'none';
 
             // Reset visibility
             if (handSection) handSection.style.display = 'none';
@@ -355,6 +360,7 @@ class App {
         console.log('Round winner:', data);
         if (data.gameOver) {
             this.ui.renderGameOver(data.winner, data.leaderboard);
+            return; // Don't show round winner section when game is over
         }
 
         const winnerSection = document.getElementById('roundWinnerSection');
