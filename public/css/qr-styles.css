@@ -25,5 +25,6 @@
     background: rgba(255, 255, 255, 0.05);
     padding: 0.5rem;
     border-radius: 6px;
-    display: inline-block;
+    display: block;
+    width: 100%;
 }
