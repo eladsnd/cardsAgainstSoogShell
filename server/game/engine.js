@@ -209,7 +209,8 @@ class GameEngine {
 
         // Rotate card czar
         const currentCzarIndex = this.players.findIndex(p => p.id === this.currentCzarId);
-        const nextCzarIndex = (currentCzarIndex + 1) % this.players.length;
+        // Handle edge case where czar was removed (-1 index)
+        const nextCzarIndex = currentCzarIndex === -1 ? 0 : (currentCzarIndex + 1) % this.players.length;
         this.currentCzarId = this.players[nextCzarIndex].id;
         return true;
     }
@@ -268,7 +269,8 @@ class GameEngine {
         this.discardedWhiteCards.push(...cardsToSubmit);
 
         // Check if all non-czar players have submitted
-        const nonCzarPlayers = this.players.filter(p => p.id !== this.currentCzarId);
+        // Only count connected players to prevent game freeze when players disconnect
+        const nonCzarPlayers = this.players.filter(p => p.id !== this.currentCzarId && p.connected);
         if (this.submissions.size === nonCzarPlayers.length) {
             this.phase = 'judging';
         }
