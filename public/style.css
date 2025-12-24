@@ -467,6 +467,9 @@ button.secondary {
 
 .card-text {
   line-height: 1.4;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .card-pick {
