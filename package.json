@@ -1,5 +1,5 @@
 {
-  "name": "cards-against-soog",
+  "name": "cards-against-friends",
   "version": "1.0.0",
   "description": "Multiplayer Cards Against Humanity game with Hebrew support",
   "main": "server/index.js",

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Cards Against Soog is a real-time multiplayer Cards Against Humanity game with support for 2-10 players. The game uses Socket.IO for real-time communication between players and supports both built-in and custom card decks.
+Cards Against Friends is a real-time multiplayer Cards Against Humanity game with support for 2-10 players. The game uses Socket.IO for real-time communication between players and supports both built-in and custom card decks.
 
 ## Development Commands
 

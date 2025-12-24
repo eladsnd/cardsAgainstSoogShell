@@ -29,7 +29,7 @@ server.listen(PORT, async () => {
     const localUrl = `http://${ip}:${PORT}`;
     const localhostUrl = `http://localhost:${PORT}`;
 
-    console.log('\n✨ Cards Against Soog Server Running! ✨\n');
+    console.log('\n✨ Cards Against Friends Server Running! ✨\n');
     console.log(`🏠 Local:           ${localhostUrl}`);
     console.log(`📡 On Your Network: ${localUrl}`);
     console.log('\n📱 Scan this QR Code to join from your phone:\n');

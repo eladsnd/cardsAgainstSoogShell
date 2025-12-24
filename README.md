@@ -1,4 +1,4 @@
-# Cards Against Soog 🎴
+# Cards Against Friends 🎴
 
 A real-time multiplayer Cards Against Humanity game where friends can connect from their phones and play together!
 

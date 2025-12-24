@@ -1,4 +1,4 @@
-// Deck Storage Utility for Cards Against Soog
+// Deck Storage Utility for Cards Against Friends
 // Provides centralized deck management functions using Server API
 
 const API_URL = '/api/decks';
