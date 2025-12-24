@@ -294,6 +294,12 @@ export class UIRenderer {
                 }
                 container.innerHTML = leaderboardHtml;
             }
+
+            // Re-bind Back to Home button (in case it wasn't bound at page load)
+            const newGameBtn = document.getElementById('newGameBtn');
+            if (newGameBtn) {
+                newGameBtn.onclick = () => location.reload();
+            }
         }
     }
 
