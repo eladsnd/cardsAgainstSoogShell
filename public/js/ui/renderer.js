@@ -298,7 +298,17 @@ export class UIRenderer {
             // Re-bind Back to Home button (in case it wasn't bound at page load)
             const newGameBtn = document.getElementById('newGameBtn');
             if (newGameBtn) {
-                newGameBtn.onclick = () => location.reload();
+                console.log('[UI] Binding newGameBtn click handler');
+                newGameBtn.onclick = (e) => {
+                    console.log('[UI] Back to Home clicked!');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // Clear session storage like leaveGame does
+                    sessionStorage.clear();
+                    location.reload();
+                };
+            } else {
+                console.error('[UI] newGameBtn not found!');
             }
         }
     }
