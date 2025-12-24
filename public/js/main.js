@@ -25,6 +25,7 @@ class App {
         document.getElementById('startGameBtn').onclick = () => this.startGame();
         document.getElementById('submitCardsBtn').onclick = () => this.submitCards();
         document.getElementById('swapCardsBtn').onclick = () => this.swapCards();
+        document.getElementById('endGameBtn').onclick = () => this.endGame();
         document.getElementById('leaveGameBtn').onclick = () => this.leaveGame();
         document.getElementById('newGameBtn').onclick = () => location.reload();
 
@@ -139,6 +140,17 @@ class App {
                 this.ui.showError(res.message);
             }
         });
+    }
+
+    endGame() {
+        if (confirm('End the game now and show final scores?')) {
+            this.socket.emit('endGame', (res) => {
+                if (!res.success) {
+                    this.ui.showError(res.message || 'Failed to end game');
+                }
+                // Game state will be updated via 'gameState' event
+            });
+        }
     }
 
     leaveGame() {

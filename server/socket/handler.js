@@ -172,6 +172,28 @@ module.exports = (io) => {
             }
         });
 
+        // End game manually
+        socket.on('endGame', (callback) => {
+            const game = roomManager.getGame(socket.data.roomCode);
+            if (!game) {
+                callback({ success: false, message: 'Room not found' });
+                return;
+            }
+
+            if (!game.gameStarted) {
+                callback({ success: false, message: 'Game has not started' });
+                return;
+            }
+
+            // End the game and calculate final standings
+            const result = game.forceEndGame();
+            callback(result);
+
+            if (result.success) {
+                io.to(game.roomCode).emit('gameState', game.getGameState());
+            }
+        });
+
         // Leave game
         socket.on('leaveGame', () => {
             const roomCode = socket.data.roomCode;

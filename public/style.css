@@ -305,7 +305,13 @@ button.secondary {
   padding: 0 1rem;
 }
 
-#leaveGameBtn {
+.game-header-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+#leaveGameBtn,
+#endGameBtn {
   width: auto;
   padding: 0.5rem 1rem;
   margin: 0;

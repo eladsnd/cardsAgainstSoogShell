@@ -385,6 +385,20 @@ class GameEngine {
         console.log(`[Engine] Game Over. Winner: ${this.finalWinner.name}`);
     }
 
+    forceEndGame() {
+        if (this.phase === 'gameOver') {
+            return { success: false, message: 'Game already over' };
+        }
+
+        this.endGame();
+        return {
+            success: true,
+            gameOver: true,
+            winner: this.finalWinner,
+            leaderboard: this.finalLeaderboard
+        };
+    }
+
     getGameState() {
         return {
             roomCode: this.roomCode,
