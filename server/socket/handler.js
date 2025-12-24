@@ -210,9 +210,20 @@ module.exports = (io) => {
                 if (game) {
                     const player = game.players.find(p => p.id === socket.id);
                     if (player) {
+                        const wasCzar = game.currentCzarId === socket.id;
                         player.connected = false;
                         io.to(roomCode).emit('playerLeft', { playerName: player.name });
                         io.to(roomCode).emit('gameState', game.getGameState());
+
+                        // If czar disconnected, reassign to first connected player
+                        if (wasCzar && game.gameStarted) {
+                            const connectedPlayers = game.players.filter(p => p.connected);
+                            if (connectedPlayers.length > 0) {
+                                game.currentCzarId = connectedPlayers[0].id;
+                                console.log(`[Socket] Czar disconnected. Reassigning to ${connectedPlayers[0].name}`);
+                                io.to(roomCode).emit('gameState', game.getGameState());
+                            }
+                        }
 
                         if (game.players.every(p => !p.connected)) {
                             roomManager.removeGame(roomCode);
