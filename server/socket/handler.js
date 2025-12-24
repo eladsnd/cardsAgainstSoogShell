@@ -174,22 +174,27 @@ module.exports = (io) => {
 
         // End game manually
         socket.on('endGame', (callback) => {
+            console.log(`[Socket] endGame requested by ${socket.id} in room ${socket.data.roomCode}`);
             const game = roomManager.getGame(socket.data.roomCode);
             if (!game) {
+                console.error(`[Socket] Room not found: ${socket.data.roomCode}`);
                 callback({ success: false, message: 'Room not found' });
                 return;
             }
 
             if (!game.gameStarted) {
+                console.error(`[Socket] Game not started in room ${socket.data.roomCode}`);
                 callback({ success: false, message: 'Game has not started' });
                 return;
             }
 
             // End the game and calculate final standings
             const result = game.forceEndGame();
+            console.log(`[Socket] forceEndGame result:`, result);
             callback(result);
 
             if (result.success) {
+                console.log(`[Socket] Broadcasting gameState to room ${game.roomCode}`);
                 io.to(game.roomCode).emit('gameState', game.getGameState());
             }
         });

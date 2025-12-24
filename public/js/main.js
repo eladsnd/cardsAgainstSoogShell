@@ -144,9 +144,13 @@ class App {
 
     endGame() {
         if (confirm('End the game now and show final scores?')) {
+            console.log('[Client] Emitting endGame event...');
             this.socket.emit('endGame', (res) => {
+                console.log('[Client] endGame response:', res);
                 if (!res.success) {
                     this.ui.showError(res.message || 'Failed to end game');
+                } else {
+                    console.log('[Client] Game ended successfully, waiting for gameState update');
                 }
                 // Game state will be updated via 'gameState' event
             });
