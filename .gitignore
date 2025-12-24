@@ -31,3 +31,7 @@ build/
 *.tmp
 temp/
 .cache/
+
+# Test coverage
+coverage/
+.nyc_output/

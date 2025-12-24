@@ -16,7 +16,7 @@ export class GameState {
 
     update(serverState) {
         this.gameData = serverState;
-        this.roomCode = serverState.roomCode;
+        this.roomCode = serverState?.roomCode;
 
         // Find self in players list
         // Note: Socket ID check needs to be done in controller
