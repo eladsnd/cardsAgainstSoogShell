@@ -250,6 +250,8 @@ button.secondary {
   padding: 2rem;
   margin-bottom: 2rem;
   text-align: left;
+  width: 100%;
+  max-width: 500px;
 }
 
 .players-waiting h3 {

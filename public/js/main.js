@@ -27,6 +27,7 @@ class App {
         document.getElementById('swapCardsBtn').onclick = () => this.swapCards();
         document.getElementById('endGameBtn').onclick = () => this.endGame();
         document.getElementById('leaveGameBtn').onclick = () => this.leaveGame();
+        document.getElementById('leaveLobbyBtn').onclick = () => this.leaveGame();
         document.getElementById('newGameBtn').onclick = () => location.reload();
 
         const toggleBtn = document.getElementById('toggleTimerBtn');
