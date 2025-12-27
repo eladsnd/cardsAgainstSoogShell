@@ -86,6 +86,7 @@ export class UIRenderer {
 
         this.elements.playerList.innerHTML = players.map(p => `
             <div class="player-item ${p.connected ? '' : 'disconnected'}">
+                ${p.color ? `<span class="player-color-dot" style="background-color: ${p.color}; box-shadow: 0 0 8px ${p.color}, 0 0 12px ${p.color};"></span>` : ''}
                 <span class="player-name">${p.name} ${p.id === myId ? '<span class="you-indicator">(YOU)</span>' : ''}</span>
                 <span class="player-score">${p.score} 🏆</span>
             </div>
@@ -149,8 +150,8 @@ export class UIRenderer {
                 // Remove blue selection, add submitted class with player color
                 cardEl.classList.remove('selected');
                 cardEl.classList.add('submitted');
-                cardEl.style.borderColor = this.playerColor;
-                cardEl.style.boxShadow = `0 0 25px ${this.playerColor}`;
+                cardEl.style.border = `4px solid ${this.playerColor}`;
+                cardEl.style.boxShadow = `0 0 20px ${this.playerColor}`;
                 console.log(`[Renderer] Card ${cardId} marked as submitted with color ${this.playerColor}`);
             }
         });
@@ -171,7 +172,7 @@ export class UIRenderer {
     updateScoreboard(players, myId) {
         this.elements.scoreboard.innerHTML = players.map(p => `
             <div class="score-item ${p.id === p.currentCzarId ? 'czar' : ''} ${p.id === myId ? 'me' : ''}">
-                ${p.color ? `<span class="player-color-dot" style="background-color: ${p.color}; width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px;"></span>` : ''}
+                ${p.color ? `<span class="player-color-dot" style="background-color: ${p.color}; box-shadow: 0 0 8px ${p.color}, 0 0 12px ${p.color};"></span>` : ''}
                 <span class="name">${p.name} ${p.id === myId ? '<span class="you-indicator">(YOU)</span>' : ''}</span>
                 <span class="score">${p.score}</span>
             </div>
@@ -192,7 +193,20 @@ export class UIRenderer {
         this.applyTextDirection(this.elements.blackCard.querySelector('.card-text'), text);
     }
 
-    renderHand(cards, selectedIds = [], onSelect) {
+    renderHand(cards, selectedIds = [], onSelect, submittedCardIds = []) {
+        // Before clearing, save submitted card styling info
+        const submittedCards = [];
+        if (this.elements.playerHand) {
+            const existingSubmitted = this.elements.playerHand.querySelectorAll('.card.submitted');
+            existingSubmitted.forEach(cardEl => {
+                submittedCards.push({
+                    id: cardEl.dataset.cardId,
+                    border: cardEl.style.border,
+                    boxShadow: cardEl.style.boxShadow
+                });
+            });
+        }
+
         this.elements.playerHand.innerHTML = '';
 
         // Ensure selectedIds is an array of strings
@@ -201,14 +215,23 @@ export class UIRenderer {
 
         cards.forEach(card => {
             const cardIdStr = String(card.id);
+            // Check if this card was previously submitted
+            const wasSubmitted = submittedCards.find(sc => sc.id === cardIdStr);
+
             // Robust selection check: cardIdStr must be present in safeSelectedIds
             const isSelected = card.id !== undefined && card.id !== null && safeSelectedIds.includes(cardIdStr);
-            console.log(`[Renderer] Card: ${cardIdStr}, isSelected: ${isSelected}`);
+            console.log(`[Renderer] Card: ${cardIdStr}, isSelected: ${isSelected}, wasSubmitted: ${!!wasSubmitted}`);
             const selectedIndex = isSelected ? safeSelectedIds.indexOf(cardIdStr) : -1;
 
             const el = document.createElement('div');
-            el.className = `card white small ${isSelected ? 'selected' : ''}`;
+            el.className = `card white small ${isSelected ? 'selected' : ''} ${wasSubmitted ? 'submitted' : ''}`;
             el.dataset.cardId = cardIdStr; // CRITICAL: Set card ID for markCardsAsSubmitted
+
+            // Restore submitted styling if this card was previously submitted
+            if (wasSubmitted) {
+                el.style.border = wasSubmitted.border;
+                el.style.boxShadow = wasSubmitted.boxShadow;
+            }
 
             // Add selection order badge if multi-pick
             let badgeHtml = '';

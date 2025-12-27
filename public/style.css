@@ -469,11 +469,21 @@ button.secondary {
   z-index: 5;
 }
 
+/* Submitted state - player color border and glow set via JS */
+.card.white.submitted,
 .card.submitted {
-  /* Border color and box-shadow will be set via inline styles with player color */
-  border: 4px solid;
+  /* Border color and box-shadow set via inline styles */
   transform: translateY(-8px) scale(1.02);
-  z-index: 5;
+  z-index: 6 !important;
+}
+
+.player-color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  /* Glow effect set via inline style with player color */
 }
 
 .selection-badge {
