@@ -64,6 +64,18 @@
             <!-- Packs will be rendered here -->
           </div>
         </div>
+
+        <div class="timer-settings">
+          <label class="toggle-switch">
+            <input type="checkbox" id="timerToggle">
+            <span class="slider"></span>
+            Round Timer
+          </label>
+          <div id="timerDurationContainer" class="timer-duration-container" style="display: none;">
+            <input type="number" id="timerDurationInput" value="40" min="10" max="120" step="5">
+            <span>seconds</span>
+          </div>
+        </div>
       </div>
 
       <div class="players-waiting">
@@ -81,6 +93,11 @@
         <div class="round-info">Round <span id="roundNumber">1</span></div>
         <div class="czar-indicator" id="czarIndicator">Czar: ---</div>
         <div class="game-header-buttons">
+          <div id="timerDisplay" class="timer-display" style="display: none;">
+            <span class="timer-icon">⏱️</span>
+            <span id="timerSeconds">40</span>
+            <button id="toggleTimerBtn" class="timer-control-btn" title="Start/Pause Timer">▶️</button>
+          </div>
           <button id="endGameBtn" class="secondary">End Game</button>
           <button id="leaveGameBtn" class="secondary">Leave Game</button>
         </div>

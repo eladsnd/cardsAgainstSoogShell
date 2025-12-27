@@ -143,6 +143,18 @@ module.exports = (io) => {
             }
         });
 
+        socket.on('toggleTimer', (callback) => {
+            const game = roomManager.getGame(socket.data.roomCode);
+            if (!game) return callback({ success: false, message: 'Game not found' });
+
+            const result = game.toggleTimer(io, game.roomCode, socket.id);
+            callback(result);
+
+            if (result.success) {
+                io.to(game.roomCode).emit('gameState', game.getGameState());
+            }
+        });
+
         socket.on('selectWinner', (winnerId, callback) => {
             const game = roomManager.getGame(socket.data.roomCode);
             if (!game) {

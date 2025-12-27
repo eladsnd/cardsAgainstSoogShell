@@ -29,6 +29,15 @@ class App {
         document.getElementById('leaveGameBtn').onclick = () => this.leaveGame();
         document.getElementById('newGameBtn').onclick = () => location.reload();
 
+        const toggleBtn = document.getElementById('toggleTimerBtn');
+        if (toggleBtn) {
+            toggleBtn.onclick = () => {
+                this.socket.emit('toggleTimer', (res) => {
+                    if (!res.success) this.ui.showError(res.message);
+                });
+            };
+        }
+
         // Socket Events
         this.socket.on('gameState', (data) => this.onGameState(data));
         this.socket.on('yourHand', (hand) => this.onHandUpdate(hand));
@@ -37,6 +46,7 @@ class App {
         this.socket.on('roundWinner', (data) => this.onRoundWinner(data));
         this.socket.on('submissions', (data) => this.onSubmissions(data));
         this.socket.on('connect', () => this.onSocketConnect());
+        this.socket.on('timerTick', (data) => this.onTimerTick(data));
     }
 
     async fetchLocalIP() {
@@ -190,6 +200,27 @@ class App {
         }
     }
 
+    onToggleTimer(isEnabled) {
+        if (this.isHost) {
+            this.socket.emit('updateGameSettings', { timerEnabled: isEnabled }, (res) => {
+                if (!res.success) this.ui.showError(res.message);
+            });
+        }
+    }
+
+    onTimerDurationChange(duration) {
+        if (this.isHost) {
+            this.socket.emit('updateGameSettings', { timerDuration: duration }, (res) => {
+                if (!res.success) this.ui.showError(res.message);
+            });
+        }
+    }
+
+    onTimerTick(data) {
+        const isCzar = this.state.gameData.currentCzarId === this.socket.getId();
+        this.ui.updateTimer(data.remaining, this.state.timerEnabled, this.state.timerRunning, isCzar, this.state.phase);
+    }
+
     // Event Handlers
     onGameState(data) {
         console.log('onGameState:', data);
@@ -203,36 +234,47 @@ class App {
 
         this.state.update(data);
         const myId = this.socket.getId();
+        this.isHost = data.players[0]?.id === myId;
         this.ui.updatePlayerList(data.players, myId);
 
         if (data.phase === 'lobby') {
-            // Determine if I am the host (first player)
-            const isHost = data.players[0]?.id === this.socket.getId();
 
             // Render pack selection
             if (data.availablePacks && data.selectedPacks) {
                 this.ui.renderPackSelection(
                     data.availablePacks,
                     data.selectedPacks,
-                    isHost,
+                    this.isHost,
                     (packId, isChecked) => this.togglePack(packId, isChecked, data.selectedPacks)
                 );
             }
+
+            // Render timer settings
+            this.ui.renderTimerSettings(
+                data.timerEnabled || false,
+                data.timerDuration || 40,
+                this.isHost,
+                (enabled) => this.onToggleTimer(enabled),
+                (duration) => this.onTimerDurationChange(duration)
+            );
         } else if (data.gameStarted) {
             this.ui.showScreen('game');
+
+            // Update timer display
+            const isCzar = data.currentCzarId === myId;
+            this.ui.updateTimer(data.timerRemaining, data.timerEnabled, data.timerRunning, isCzar, data.phase);
+
             if (data.currentBlackCard) {
                 console.log(`[State] Current Black Card: "${data.currentBlackCard.text}", Pick: ${data.currentBlackCard.pick}`);
                 this.ui.renderBlackCard(data.currentBlackCard);
             }
 
-            const myId = this.socket.getId();
             const me = data.players.find(p => p.id === myId);
             if (me) {
                 this.state.swapsRemaining = me.swapsRemaining;
                 this.ui.updateSwapsDisplay(me.swapsRemaining);
             }
 
-            const isCzar = data.currentCzarId === myId;
             const czar = data.players.find(p => p.id === data.currentCzarId);
             const czarName = czar ? czar.name : 'Unknown';
 

@@ -29,4 +29,10 @@ export class GameState {
     get pickCount() {
         return this.gameData?.currentBlackCard?.pick || 1;
     }
+
+    get timerEnabled() { return this.gameData?.timerEnabled || false; }
+    get timerDuration() { return this.gameData?.timerDuration || 40; }
+    get timerRemaining() { return this.gameData?.timerRemaining || 0; }
+    get timerRunning() { return this.gameData?.timerRunning || false; }
+    get phase() { return this.gameData?.phase || 'lobby'; }
 }

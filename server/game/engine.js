@@ -22,6 +22,11 @@ class GameEngine {
         this.phase = 'lobby'; // lobby, playing, judging, roundEnd, gameOver
         this.finalWinner = null;
         this.finalLeaderboard = null;
+        this.timerEnabled = false;
+        this.timerDuration = 40;
+        this.timerRemaining = 0;
+        this.timerRunning = false;
+        this.timerInterval = null;
     }
 
     addPlayer(playerId, playerName) {
@@ -174,6 +179,75 @@ class GameEngine {
         return { success: true };
     }
 
+    startTimer(io, roomCode) {
+        if (!this.timerEnabled || !this.gameStarted) return;
+
+        this.stopTimer();
+        this.timerRunning = true;
+
+        this.timerInterval = setInterval(() => {
+            this.timerRemaining--;
+
+            if (this.timerRemaining <= 0) {
+                this.stopTimer();
+                this.handleTimerExpiration(io, roomCode);
+            } else {
+                io.to(roomCode).emit('timerTick', { remaining: this.timerRemaining });
+            }
+        }, 1000);
+    }
+
+    stopTimer() {
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
+        this.timerRunning = false;
+    }
+
+    toggleTimer(io, roomCode, playerId) {
+        if (playerId !== this.currentCzarId) return { success: false, message: 'Only Czar can toggle timer' };
+        if (!this.timerEnabled) return { success: false, message: 'Timer is disabled' };
+        if (this.phase !== 'playing') return { success: false, message: 'Timer only available during playing phase' };
+
+        if (this.timerRunning) {
+            this.stopTimer();
+        } else {
+            this.startTimer(io, roomCode);
+        }
+        return { success: true, timerRunning: this.timerRunning };
+    }
+
+    handleTimerExpiration(io, roomCode) {
+        console.log(`[Engine] Timer expired for room ${roomCode} in phase ${this.phase}`);
+
+        if (this.phase === 'playing') {
+            // Auto-submit random cards for players who hasn't submitted
+            const nonCzarPlayers = this.players.filter(p => p.id !== this.currentCzarId && p.connected);
+            nonCzarPlayers.forEach(player => {
+                if (!this.submissions.has(player.id)) {
+                    const pickCount = this.currentBlackCard?.pick || 1;
+                    const randomCards = player.hand.slice(0, pickCount).map(c => c.id);
+                    if (randomCards.length === pickCount) {
+                        console.log(`[Engine] Auto-submitting for ${player.name}`);
+                        this.submitCard(player.id, randomCards);
+                    }
+                }
+            });
+
+            // Phase transition is handled inside submitCard if everyone "submitted"
+            // If some couldn't submit (no cards?), force phase transition anyway
+            if (this.phase === 'playing') {
+                this.phase = 'judging';
+            }
+
+            io.to(roomCode).emit('gameState', this.getGameState());
+            if (this.phase === 'judging') {
+                io.to(roomCode).emit('submissions', this.getSubmissions());
+            }
+        }
+    }
+
     dealCards(player, count) {
         console.log(`[Engine] Dealing ${count} cards to ${player.name}. Current hand size: ${player.hand.length}`);
         for (let i = 0; i < count; i++) {
@@ -195,8 +269,9 @@ class GameEngine {
         this.submissions.clear();
         this.roundWinner = null;
         this.phase = 'playing';
-
-        // Reset swaps for all players
+        this.timerRemaining = this.timerDuration;
+        this.timerRunning = false;
+        this.stopTimer();
         this.players.forEach(p => p.swapsRemaining = 3);
 
         // Pick a black card
@@ -273,6 +348,7 @@ class GameEngine {
         const nonCzarPlayers = this.players.filter(p => p.id !== this.currentCzarId && p.connected);
         if (this.submissions.size === nonCzarPlayers.length) {
             this.phase = 'judging';
+            this.stopTimer(); // Stop playing timer
         }
 
         return { success: true };
@@ -347,6 +423,7 @@ class GameEngine {
             }
         }
 
+        this.stopTimer(); // Stop judging timer
         return { success: true, gameOver: false };
     }
 
@@ -420,7 +497,11 @@ class GameEngine {
             selectedPacks: this.selectedPacks,
             availablePacks: this.getAvailablePacks(),
             winner: this.finalWinner,
-            leaderboard: this.finalLeaderboard
+            leaderboard: this.finalLeaderboard,
+            timerEnabled: this.timerEnabled,
+            timerDuration: this.timerDuration,
+            timerRemaining: this.timerRemaining,
+            timerRunning: this.timerRunning
         };
     }
 
@@ -459,6 +540,12 @@ class GameEngine {
     updateSettings(settings) {
         if (settings.packs) {
             this.selectedPacks = settings.packs;
+        }
+        if (settings.timerEnabled !== undefined) {
+            this.timerEnabled = !!settings.timerEnabled;
+        }
+        if (settings.timerDuration !== undefined) {
+            this.timerDuration = parseInt(settings.timerDuration) || 40;
         }
         return { success: true };
     }

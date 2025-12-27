@@ -28,8 +28,27 @@ export class UIRenderer {
             qrCodeContainer: document.getElementById('qrCodeContainer'),
             swapsRemaining: document.getElementById('swapsRemainingDisplay'),
             swapCardsBtn: document.getElementById('swapCardsBtn'),
+            timerDisplay: document.getElementById('timerDisplay'),
+            timerSeconds: document.getElementById('timerSeconds'),
+            toggleTimerBtn: document.getElementById('toggleTimerBtn'),
         };
+        this.isFloating = false;
+        this.initPersistentTimer();
         console.log('Renderer initialized. Screens:', this.screens);
+    }
+
+    initPersistentTimer() {
+        window.addEventListener('scroll', () => {
+            if (!this.elements.timerDisplay) return;
+
+            // If we are scrolled down more than 50px, float the timer
+            const shouldFloat = window.scrollY > 50;
+
+            if (shouldFloat !== this.isFloating) {
+                this.isFloating = shouldFloat;
+                this.elements.timerDisplay.classList.toggle('floating', this.isFloating);
+            }
+        });
     }
 
     showScreen(screenName) {
@@ -260,6 +279,75 @@ export class UIRenderer {
             div.appendChild(label);
             container.appendChild(div);
         });
+    }
+
+    renderTimerSettings(isEnabled, duration, isHost, onToggle, onDurationChange) {
+        const toggle = document.getElementById('timerToggle');
+        const durationInput = document.getElementById('timerDurationInput');
+        const durationContainer = document.getElementById('timerDurationContainer');
+
+        if (toggle) {
+            toggle.disabled = !isHost;
+            if (toggle.checked !== isEnabled) {
+                toggle.checked = isEnabled;
+            }
+            toggle.onchange = () => {
+                const checked = toggle.checked;
+                if (durationContainer) durationContainer.style.display = checked ? 'flex' : 'none';
+                onToggle(checked);
+            };
+        }
+
+        if (durationInput) {
+            durationInput.disabled = !isHost;
+            if (durationInput.value !== String(duration)) {
+                durationInput.value = duration;
+            }
+            durationInput.onchange = () => {
+                const val = parseInt(durationInput.value);
+                if (!isNaN(val)) onDurationChange(val);
+            };
+        }
+
+        if (durationContainer) {
+            durationContainer.style.display = isEnabled ? 'flex' : 'none';
+        }
+    }
+
+    updateTimer(remaining, enabled, running, isCzar, phase) {
+        if (!this.elements.timerDisplay) return;
+
+        if (!enabled || (phase !== 'playing' && phase !== 'judging')) {
+            this.elements.timerDisplay.style.display = 'none';
+            return;
+        }
+
+        // Only show if playing phase (judging phase timer is removed as requested, 
+        // but we'll keep the display hidden for it)
+        if (phase !== 'playing') {
+            this.elements.timerDisplay.style.display = 'none';
+            return;
+        }
+
+        this.elements.timerDisplay.style.display = 'flex';
+        this.elements.timerSeconds.textContent = remaining;
+
+        // Apply not-czar class for floating opacity if needed
+        this.elements.timerDisplay.classList.toggle('not-czar', !isCzar);
+
+        // Toggle button visibility and icon
+        if (this.elements.toggleTimerBtn) {
+            this.elements.toggleTimerBtn.style.display = isCzar ? 'flex' : 'none';
+            this.elements.toggleTimerBtn.textContent = running ? '⏸️' : '▶️';
+            this.elements.toggleTimerBtn.title = running ? 'Pause Timer' : 'Start Timer';
+        }
+
+        // Visual warning if time is low
+        if (remaining <= 10 && running) {
+            this.elements.timerDisplay.classList.add('warning');
+        } else {
+            this.elements.timerDisplay.classList.remove('warning');
+        }
     }
 
     renderGameOver(winner, leaderboard) {
