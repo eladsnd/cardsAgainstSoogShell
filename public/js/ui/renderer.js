@@ -252,7 +252,7 @@ export class UIRenderer {
         packs.forEach(pack => {
             const isSelected = selectedIds.includes(pack.id);
             const div = document.createElement('div');
-            div.className = 'pack-item';
+            div.className = `pack-item${isSelected ? ' selected' : ''}`;
 
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
@@ -261,17 +261,22 @@ export class UIRenderer {
             checkbox.id = `pack-${pack.id}`;
 
             if (isHost) {
-                checkbox.onchange = () => onToggle(pack.id, checkbox.checked);
                 div.onclick = (e) => {
-                    if (e.target !== checkbox) {
-                        checkbox.checked = !checkbox.checked;
-                        onToggle(pack.id, checkbox.checked);
-                    }
+                    // Prevent any accidental double-firing if checkbox was clicked
+                    if (e.target === checkbox) return;
+
+                    const nextState = !checkbox.checked;
+                    checkbox.checked = nextState;
+                    onToggle(pack.id, nextState);
+                };
+
+                // Still allow checkbox change (e.g. from keyboard)
+                checkbox.onchange = (e) => {
+                    onToggle(pack.id, checkbox.checked);
                 };
             }
 
-            const label = document.createElement('label');
-            label.htmlFor = `pack-${pack.id}`;
+            const label = document.createElement('span'); // Use span instead of label with htmlFor to avoid double toggle
             const packIcon = pack.id.startsWith('deck_') ? '📁 ' : '📦 ';
             label.textContent = packIcon + pack.name;
             label.style.cursor = isHost ? 'pointer' : 'default';
