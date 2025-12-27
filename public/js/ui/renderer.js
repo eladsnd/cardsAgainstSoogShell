@@ -35,6 +35,7 @@ export class UIRenderer {
         };
         this.isFloating = false;
         this.playerColor = null; // Will be set when game state is received
+        this.selectedSubmissionId = null; // Track selected submission for Czar
         this.initPersistentTimer();
         console.log('Renderer initialized. Screens:', this.screens);
     }
@@ -273,10 +274,12 @@ export class UIRenderer {
         }
 
         grid.innerHTML = '';
+        this.selectedSubmissionId = null; // Reset selection
 
         submissions.forEach(sub => {
             const group = document.createElement('div');
             group.className = 'submission-group';
+            group.dataset.playerId = sub.playerId; // Store player ID for selection
 
             sub.cards.forEach(card => {
                 const el = document.createElement('div');
@@ -292,7 +295,7 @@ export class UIRenderer {
                 // Add "Pick this" indicator
                 const indicator = document.createElement('div');
                 indicator.className = 'pick-indicator';
-                indicator.textContent = 'PICK THIS';
+                indicator.textContent = 'CLICK TO SELECT';
                 indicator.style.textAlign = 'center';
                 indicator.style.fontSize = '0.8rem';
                 indicator.style.fontWeight = '800';
@@ -303,12 +306,55 @@ export class UIRenderer {
                 group.appendChild(indicator);
 
                 group.onmouseenter = () => indicator.style.opacity = '1';
-                group.onmouseleave = () => indicator.style.opacity = '0';
-                group.onclick = () => onSelectWinner(sub.playerId);
+                group.onmouseleave = () => {
+                    // Keep indicator visible if this is the selected submission
+                    if (this.selectedSubmissionId !== sub.playerId) {
+                        indicator.style.opacity = '0';
+                    }
+                };
+
+                // Click to select (not submit)
+                group.onclick = () => {
+                    // Deselect all submissions
+                    grid.querySelectorAll('.submission-group').forEach(g => {
+                        g.classList.remove('selected-submission');
+                        g.style.border = '';
+                        g.style.boxShadow = '';
+                    });
+
+                    // Select this one
+                    group.classList.add('selected-submission');
+                    group.style.border = '3px solid var(--accent-gold)';
+                    group.style.boxShadow = '0 0 20px rgba(255, 215, 0, 0.5)';
+                    indicator.style.opacity = '1';
+                    indicator.textContent = 'SELECTED';
+
+                    // Store selection and show button
+                    this.selectedSubmissionId = sub.playerId;
+                    this.updateSelectWinnerButton(onSelectWinner);
+                };
             }
 
             this.elements.submissions.appendChild(group);
         });
+
+        // Hide button on initial render
+        this.updateSelectWinnerButton(onSelectWinner);
+    }
+
+    updateSelectWinnerButton(onSelectWinner) {
+        const btn = document.getElementById('selectWinnerBtn');
+        if (!btn) return;
+
+        if (this.selectedSubmissionId) {
+            btn.style.display = 'block';
+            btn.onclick = () => {
+                onSelectWinner(this.selectedSubmissionId);
+                btn.style.display = 'none';
+            };
+        } else {
+            btn.style.display = 'none';
+        }
     }
 
     clearSubmissions() {
