@@ -31,6 +31,7 @@ class GameEngine {
     constructor(roomCode) {
         this.roomCode = roomCode;
         this.players = [];
+        this.usedColors = []; // Track assigned colors
         this.gameStarted = false;
         this.currentBlackCard = null;
         this.currentCzarId = null;
@@ -100,8 +101,19 @@ class GameEngine {
             return false;
         }
 
-        // Assign color using round-robin from palette
-        const playerColor = NEON_COLORS[this.players.length % NEON_COLORS.length];
+        // Assign color randomly from available colors
+        let playerColor;
+        const availableColors = NEON_COLORS.filter(color => !this.usedColors.includes(color));
+
+        if (availableColors.length > 0) {
+            // Pick random from unused colors
+            playerColor = availableColors[Math.floor(Math.random() * availableColors.length)];
+        } else {
+            // All colors used, pick random from full palette (allow duplicates)
+            playerColor = NEON_COLORS[Math.floor(Math.random() * NEON_COLORS.length)];
+        }
+
+        this.usedColors.push(playerColor);
 
         const player = {
             id: playerId,
