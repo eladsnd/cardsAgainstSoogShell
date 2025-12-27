@@ -133,10 +133,14 @@
       <div id="phaseIndicator" class="phase-indicator"></div>
 
       <!-- Black Card Display -->
-      <div class="black-card-container">
+      <div class="black-card-container" style="flex-direction: column; gap: 1rem;">
         <div class="card black" id="blackCardDisplay">
           <div class="card-text">Waiting for question...</div>
         </div>
+        <button id="tradeBlackCardBtn" class="secondary"
+          style="display: none; width: auto; align-self: center; padding: 0.5rem 1rem; font-size: 0.9rem;">
+          🔄 Trade Card
+        </button>
       </div>
 
       <!-- Status/Instructions -->

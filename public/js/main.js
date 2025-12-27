@@ -29,6 +29,7 @@ export class App {
         document.getElementById('leaveGameBtn').onclick = () => this.leaveGame();
         document.getElementById('leaveLobbyBtn').onclick = () => this.leaveGame();
         document.getElementById('newGameBtn').onclick = () => location.reload();
+        document.getElementById('tradeBlackCardBtn').onclick = () => this.tradeBlackCard();
 
         const toggleBtn = document.getElementById('toggleTimerBtn');
         if (toggleBtn) {
@@ -148,6 +149,18 @@ export class App {
             if (res.success) {
                 this.state.selectedCards = [];
                 // Hand will be updated via 'yourHand' event
+            } else {
+                this.ui.showError(res.message);
+            }
+        });
+    }
+
+    tradeBlackCard() {
+        if (!confirm('Are you sure you want to trade the black card? You can only do this once per round.')) return;
+
+        this.socket.emit('tradeBlackCard', (res) => {
+            if (res.success) {
+                console.log('[Client] Black card traded successfully');
             } else {
                 this.ui.showError(res.message);
             }
@@ -296,6 +309,8 @@ export class App {
                 data.submissionCount || 0,
                 data.players.length
             );
+
+            this.ui.updateTradeButton(isCzar, data.phase, data.blackCardTraded);
 
             // Mark czar in players array for scoreboard
             const playersWithCzar = data.players.map(p => ({

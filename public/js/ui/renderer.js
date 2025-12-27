@@ -31,6 +31,7 @@ export class UIRenderer {
             timerDisplay: document.getElementById('timerDisplay'),
             timerSeconds: document.getElementById('timerSeconds'),
             toggleTimerBtn: document.getElementById('toggleTimerBtn'),
+            tradeBlackCardBtn: document.getElementById('tradeBlackCardBtn'),
         };
         this.isFloating = false;
         this.initPersistentTimer();
@@ -113,6 +114,15 @@ export class UIRenderer {
             this.elements.czarInfo.classList.add('highlight');
         } else {
             this.elements.czarInfo.classList.remove('highlight');
+        }
+    }
+
+    updateTradeButton(isCzar, phase, blackCardTraded) {
+        if (this.elements.tradeBlackCardBtn) {
+            // Show only if Czar, playing phase, and hasn't traded yet
+            const showButton = isCzar && phase === 'playing' && !blackCardTraded;
+            this.elements.tradeBlackCardBtn.style.display = showButton ? 'block' : 'none'; // changed to block/flex in CSS, use block or inherit
+            // match typical display style from CSS if needed, or just block
         }
     }
 

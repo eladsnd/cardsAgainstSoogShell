@@ -143,6 +143,20 @@ module.exports = (io) => {
             }
         });
 
+        // Trade black card (Czar only)
+        socket.on('tradeBlackCard', (callback) => {
+            const game = roomManager.getGame(socket.data.roomCode);
+            if (!game) return callback({ success: false, message: 'Game not found' });
+
+            const result = game.tradeBlackCard(socket.id);
+            callback(result);
+
+            if (result.success) {
+                // Broadcast updated game state to show new black card
+                io.to(game.roomCode).emit('gameState', game.getGameState());
+            }
+        });
+
         socket.on('toggleTimer', (callback) => {
             const game = roomManager.getGame(socket.data.roomCode);
             if (!game) return callback({ success: false, message: 'Game not found' });

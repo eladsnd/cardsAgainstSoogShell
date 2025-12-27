@@ -27,8 +27,27 @@ class GameEngine {
         this.timerDuration = 40;
         this.timerRemaining = 0;
         this.timerRunning = false;
+        this.timerRunning = false;
         this.timerInterval = null;
+        this.blackCardTraded = false; // Flag to track if black card has been traded this round
     }
+
+    tradeBlackCard(playerId) {
+        if (this.phase !== 'playing') return { success: false, message: 'Can only trade during playing phase' };
+        if (playerId !== this.currentCzarId) return { success: false, message: 'Only Czar can trade the black card' };
+        if (this.blackCardTraded) return { success: false, message: 'Black card already traded this round' };
+
+        if (this.blackCardDeck.length === 0) return { success: false, message: 'No more black cards available' };
+
+        // Draw new black card
+        const newCard = this.blackCardDeck.pop();
+        this.currentBlackCard = newCard;
+        this.blackCardTraded = true;
+
+        console.log(`[Engine] Czar traded black card. New card: "${newCard.text}"`);
+        return { success: true, blackCard: newCard };
+    }
+
 
     addPlayer(playerId, playerName) {
         // Check if player with same name already exists (reconnection)
@@ -274,6 +293,7 @@ class GameEngine {
         this.timerRunning = false;
         this.stopTimer();
         this.players.forEach(p => p.swapsRemaining = 3);
+        this.blackCardTraded = false;
 
         // Pick a black card
         if (this.blackCardDeck.length === 0) {
@@ -489,6 +509,7 @@ class GameEngine {
             })),
             gameStarted: this.gameStarted,
             currentBlackCard: this.currentBlackCard,
+            blackCardTraded: this.blackCardTraded,
             currentCzarId: this.currentCzarId,
             phase: this.phase,
             currentRound: this.currentRound,
