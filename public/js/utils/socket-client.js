@@ -14,10 +14,12 @@ class SocketClient {
     initializeListeners() {
         this.socket.on('connect', () => {
             console.log('Connected to server');
+            this.trigger('connect');
         });
 
         this.socket.on('disconnect', () => {
             console.log('Disconnected from server');
+            this.trigger('disconnect');
         });
 
         // Generic event handler
@@ -41,6 +43,12 @@ class SocketClient {
 
     getId() {
         return this.socket.id;
+    }
+
+    trigger(event, ...args) {
+        if (this.callbacks.has(event)) {
+            this.callbacks.get(event).forEach(cb => cb(...args));
+        }
     }
 }
 

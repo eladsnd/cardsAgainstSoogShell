@@ -36,6 +36,7 @@ class App {
         this.socket.on('playerLeft', (data) => console.log('Player left:', data));
         this.socket.on('roundWinner', (data) => this.onRoundWinner(data));
         this.socket.on('submissions', (data) => this.onSubmissions(data));
+        this.socket.on('connect', () => this.onSocketConnect());
     }
 
     async fetchLocalIP() {
@@ -162,6 +163,30 @@ class App {
             this.socket.emit('leaveGame');
             sessionStorage.removeItem(STORAGE_KEYS.SESSION);
             location.reload();
+        }
+    }
+
+    onSocketConnect() {
+        console.log('[Socket] Connected/Reconnected to server');
+        // If we have a saved session, try to re-join the room automatically
+        const saved = sessionStorage.getItem(STORAGE_KEYS.SESSION);
+        if (saved) {
+            try {
+                const session = JSON.parse(saved);
+                if (session.roomCode && session.playerName) {
+                    console.log(`[Socket] Auto-rejoining room: ${session.roomCode} for ${session.playerName}`);
+                    this.socket.emit('joinRoom', session.roomCode, session.playerName, (res) => {
+                        if (res.success) {
+                            console.log('[Socket] Auto-rejoin successful');
+                            this.ui.updateRoomCode(session.roomCode);
+                        } else {
+                            console.warn('[Socket] Auto-rejoin failed:', res.message);
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error('[Socket] Failed to parse saved session for auto-rejoin:', e);
+            }
         }
     }
 

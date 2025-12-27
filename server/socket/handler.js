@@ -1,5 +1,8 @@
 const roomManager = require('../game/room-manager');
 
+const DISCONNECT_TIMEOUT = 30000; // 30 seconds
+const reconnectionTimeouts = new Map(); // "roomCode:playerName" -> { timeoutId, socketId }
+
 module.exports = (io) => {
     io.on('connection', (socket) => {
         console.log(`User connected: ${socket.id}`);
@@ -25,6 +28,14 @@ module.exports = (io) => {
             if (!game) {
                 callback({ success: false, message: 'Room not found' });
                 return;
+            }
+
+            // Clear any pending disconnect timeout for this player
+            const timeoutKey = `${roomCode}:${playerName}`;
+            if (reconnectionTimeouts.has(timeoutKey)) {
+                clearTimeout(reconnectionTimeouts.get(timeoutKey).timeoutId);
+                reconnectionTimeouts.delete(timeoutKey);
+                console.log(`[Socket] Reconnection grace period cancelled for ${playerName}`);
             }
 
             const success = game.addPlayer(socket.id, playerName);
@@ -205,6 +216,13 @@ module.exports = (io) => {
             const playerName = socket.data.playerName;
 
             if (roomCode) {
+                // Clear any pending reconnection timeout
+                const timeoutKey = `${roomCode}:${playerName}`;
+                if (reconnectionTimeouts.has(timeoutKey)) {
+                    clearTimeout(reconnectionTimeouts.get(timeoutKey).timeoutId);
+                    reconnectionTimeouts.delete(timeoutKey);
+                }
+
                 const game = roomManager.getGame(roomCode);
                 if (game) {
                     const wasCzar = game.currentCzarId === socket.id;
@@ -232,29 +250,58 @@ module.exports = (io) => {
         // Disconnect
         socket.on('disconnect', () => {
             const roomCode = socket.data.roomCode;
-            if (roomCode) {
+            const playerName = socket.data.playerName;
+
+            if (roomCode && playerName) {
                 const game = roomManager.getGame(roomCode);
                 if (game) {
                     const player = game.players.find(p => p.id === socket.id);
                     if (player) {
-                        const wasCzar = game.currentCzarId === socket.id;
                         player.connected = false;
+                        console.log(`[Socket] ${playerName} disconnected. Starting 30s grace period.`);
+
                         io.to(roomCode).emit('playerLeft', { playerName: player.name });
                         io.to(roomCode).emit('gameState', game.getGameState());
 
-                        // If czar disconnected, reassign to first connected player
-                        if (wasCzar && game.gameStarted) {
-                            const connectedPlayers = game.players.filter(p => p.connected);
-                            if (connectedPlayers.length > 0) {
-                                game.currentCzarId = connectedPlayers[0].id;
-                                console.log(`[Socket] Czar disconnected. Reassigning to ${connectedPlayers[0].name}`);
-                                io.to(roomCode).emit('gameState', game.getGameState());
-                            }
+                        // Start grace period timeout
+                        const timeoutKey = `${roomCode}:${playerName}`;
+
+                        // Clear any existing timeout for this name (safety)
+                        if (reconnectionTimeouts.has(timeoutKey)) {
+                            clearTimeout(reconnectionTimeouts.get(timeoutKey).timeoutId);
                         }
 
-                        if (game.players.every(p => !p.connected)) {
-                            roomManager.removeGame(roomCode);
-                        }
+                        const timeoutId = setTimeout(() => {
+                            const currentGame = roomManager.getGame(roomCode);
+                            if (currentGame) {
+                                const p = currentGame.players.find(p => p.name === playerName);
+                                // Only clean up if they are STILL disconnected
+                                if (p && !p.connected) {
+                                    console.log(`[Socket] Grace period expired for ${playerName}. cleaning up.`);
+
+                                    const wasCzar = currentGame.currentCzarId === p.id;
+
+                                    // If they were Czar, reassign
+                                    if (wasCzar && currentGame.gameStarted) {
+                                        const connectedPlayers = currentGame.players.filter(p => p.connected);
+                                        if (connectedPlayers.length > 0) {
+                                            currentGame.currentCzarId = connectedPlayers[0].id;
+                                            console.log(`[Socket] Reassigned Czar from ${playerName} to ${connectedPlayers[0].name}`);
+                                            io.to(roomCode).emit('gameState', currentGame.getGameState());
+                                        }
+                                    }
+
+                                    // If everyone is gone, remove room
+                                    if (currentGame.players.every(p => !p.connected)) {
+                                        console.log(`[Socket] Room ${roomCode} empty. Removing.`);
+                                        roomManager.removeGame(roomCode);
+                                    }
+                                }
+                            }
+                            reconnectionTimeouts.delete(timeoutKey);
+                        }, DISCONNECT_TIMEOUT);
+
+                        reconnectionTimeouts.set(timeoutKey, { timeoutId, socketId: socket.id });
                     }
                 }
             }

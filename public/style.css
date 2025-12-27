@@ -270,6 +270,28 @@ button.secondary {
   align-items: center;
   gap: 0.75rem;
   animation: slideIn 0.3s ease;
+  transition: all 0.3s ease;
+}
+
+.player-item.disconnected {
+  opacity: 0.5;
+  filter: grayscale(1);
+}
+
+.player-item.disconnected .player-icon {
+  background: var(--text-muted);
+  box-shadow: none;
+}
+
+.player-item.disconnected::after {
+  content: 'OFFLINE';
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--error);
+  margin-left: auto;
+  padding: 2px 6px;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 4px;
 }
 
 @keyframes slideIn {
