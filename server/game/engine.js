@@ -1,6 +1,28 @@
 const { packs, shuffleArray } = require('../../cards-data');
 const config = require('../../config');
 
+// Neon color palette for player assignment (18 VIBRANT colors)
+const NEON_COLORS = [
+    'hsl(210, 100%, 70%)',  // Electric Blue
+    'hsl(330, 100%, 70%)',  // Neon Pink
+    'hsl(120, 100%, 60%)',  // Lime Green
+    'hsl(180, 100%, 60%)',  // Cyan
+    'hsl(300, 100%, 70%)',  // Magenta
+    'hsl(60, 100%, 60%)',   // Yellow
+    'hsl(30, 100%, 65%)',   // Orange
+    'hsl(0, 100%, 65%)',    // Red
+    'hsl(270, 100%, 70%)',  // Purple
+    'hsl(165, 100%, 60%)',  // Teal
+    'hsl(90, 100%, 60%)',   // Chartreuse
+    'hsl(195, 100%, 65%)',  // Sky Blue
+    'hsl(345, 100%, 70%)',  // Hot Pink
+    'hsl(285, 100%, 70%)',  // Violet
+    'hsl(45, 100%, 65%)',   // Gold
+    'hsl(15, 100%, 65%)',   // Coral
+    'hsl(150, 100%, 60%)',  // Spring Green
+    'hsl(225, 100%, 70%)',  // Periwinkle
+];
+
 /**
  * Game Engine class managing Cards Against Humanity game logic
  * Refactored from game-logic.js
@@ -78,6 +100,9 @@ class GameEngine {
             return false;
         }
 
+        // Assign color using round-robin from palette
+        const playerColor = NEON_COLORS[this.players.length % NEON_COLORS.length];
+
         const player = {
             id: playerId,
             name: playerName,
@@ -85,6 +110,7 @@ class GameEngine {
             score: 0,
             connected: true,
             swapsRemaining: 3,
+            color: playerColor,
         };
 
         // If game already started, deal cards to new player
@@ -94,6 +120,7 @@ class GameEngine {
         }
 
         this.players.push(player);
+        console.log(`[Engine] Assigned color ${playerColor} to player ${playerName}`);
         return true;
     }
 
@@ -506,6 +533,7 @@ class GameEngine {
                 score: p.score,
                 connected: p.connected,
                 swapsRemaining: p.swapsRemaining,
+                color: p.color,
             })),
             gameStarted: this.gameStarted,
             currentBlackCard: this.currentBlackCard,

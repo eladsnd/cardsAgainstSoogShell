@@ -34,6 +34,7 @@ export class UIRenderer {
             tradeBlackCardBtn: document.getElementById('tradeBlackCardBtn'),
         };
         this.isFloating = false;
+        this.playerColor = null; // Will be set when game state is received
         this.initPersistentTimer();
         console.log('Renderer initialized. Screens:', this.screens);
     }
@@ -126,9 +127,51 @@ export class UIRenderer {
         }
     }
 
+    setPlayerColor(color) {
+        this.playerColor = color;
+        console.log('[Renderer] Player color set to:', color);
+    }
+
+    markCardsAsSubmitted(cardIds) {
+        if (!this.playerColor) {
+            console.warn('[Renderer] Cannot mark cards as submitted - no player color set');
+            return;
+        }
+
+        const handContainer = this.elements.playerHand;
+        if (!handContainer) return;
+
+        // Find all card elements and transform selected -> submitted with player color
+        const cardElements = handContainer.querySelectorAll('.card');
+        cardElements.forEach(cardEl => {
+            const cardId = cardEl.dataset.cardId;
+            if (cardIds.includes(cardId)) {
+                // Remove blue selection, add submitted class with player color
+                cardEl.classList.remove('selected');
+                cardEl.classList.add('submitted');
+                cardEl.style.borderColor = this.playerColor;
+                cardEl.style.boxShadow = `0 0 25px ${this.playerColor}`;
+                console.log(`[Renderer] Card ${cardId} marked as submitted with color ${this.playerColor}`);
+            }
+        });
+    }
+
+    clearSubmittedCards() {
+        const handContainer = this.elements.playerHand;
+        if (!handContainer) return;
+
+        const cardElements = handContainer.querySelectorAll('.card.submitted');
+        cardElements.forEach(cardEl => {
+            cardEl.classList.remove('submitted');
+            cardEl.style.borderColor = '';
+            cardEl.style.boxShadow = '';
+        });
+    }
+
     updateScoreboard(players, myId) {
         this.elements.scoreboard.innerHTML = players.map(p => `
             <div class="score-item ${p.id === p.currentCzarId ? 'czar' : ''} ${p.id === myId ? 'me' : ''}">
+                ${p.color ? `<span class="player-color-dot" style="background-color: ${p.color}; width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px;"></span>` : ''}
                 <span class="name">${p.name} ${p.id === myId ? '<span class="you-indicator">(YOU)</span>' : ''}</span>
                 <span class="score">${p.score}</span>
             </div>
@@ -165,6 +208,7 @@ export class UIRenderer {
 
             const el = document.createElement('div');
             el.className = `card white small ${isSelected ? 'selected' : ''}`;
+            el.dataset.cardId = cardIdStr; // CRITICAL: Set card ID for markCardsAsSubmitted
 
             // Add selection order badge if multi-pick
             let badgeHtml = '';

@@ -12,6 +12,8 @@ export class App {
         this.ui = new UIRenderer();
         this.state = new GameState();
         this.socket = new SocketClient();
+        this.submittedCards = []; // Cache for visual feedback
+        this.justSubmitted = false; // Flag to prevent immediate re-render
 
         this.bindEvents();
         this.checkSession();
@@ -127,11 +129,18 @@ export class App {
         }
 
         console.log('[Submit] Sending to server...');
+        // Cache selected cards before clearing
+        const submittedCardIds = [...this.state.selectedCards];
+
         this.socket.emit('submitCards', this.state.selectedCards, (res) => {
             console.log('[Submit] Server response:', res);
             if (res.success) {
+                console.log('[Submit] Calling markCardsAsSubmitted with:', submittedCardIds);
+                // Transform selected cards from blue -> player color
+                this.ui.markCardsAsSubmitted(submittedCardIds);
                 this.state.selectedCards = [];
-                this.ui.renderHand(this.state.hand, [], this.onCardSelect.bind(this));
+                this.justSubmitted = true; // Prevent hand re-render
+                console.log('[Submit] Set justSubmitted flag to prevent re-render');
             } else {
                 console.error('[Submit] Server error:', res.message);
                 this.ui.showError(res.message);
@@ -235,21 +244,28 @@ export class App {
         this.ui.updateTimer(data.remaining, this.state.timerEnabled, this.state.timerRunning, isCzar, this.state.phase);
     }
 
-    // Event Handlers
     onGameState(data) {
         console.log('onGameState:', data);
 
-        // If we just entered the playing phase, clear previous selections
+        // If we just entered the playing phase, clear previous selections and submitted cards
         if (data.phase === 'playing' && this.state.currentPhase !== 'playing') {
-            console.log('[State] New round started, clearing selection');
+            console.log('[State] New round started, clearing selection and submitted cards');
             this.state.selectedCards = [];
+            this.submittedCards = []; // Clear cached submitted cards for new round
             this.ui.clearSubmissions();
+            this.ui.clearSubmittedCards();
         }
 
         this.state.update(data);
         const myId = this.socket.getId();
         this.isHost = data.players[0]?.id === myId;
         this.ui.updatePlayerList(data.players, myId);
+
+        // Extract and set player color
+        const me = data.players.find(p => p.id === myId);
+        if (me && me.color) {
+            this.ui.setPlayerColor(me.color);
+        }
 
         if (data.phase === 'lobby') {
             const settingsSection = document.getElementById('gameSettingsSection');
@@ -341,10 +357,14 @@ export class App {
                 if (phaseIndicator) phaseIndicator.textContent = isCzar ? 'Wait for players to submit...' : 'Pick your cards!';
                 if (!isCzar && handSection) {
                     handSection.style.display = 'block';
-                    // Ensure hand is rendered when phase changes to playing
-                    this.ui.renderHand(this.state.hand, this.state.selectedCards, this.onCardSelect.bind(this));
+                    // Only re-render hand if we didn't just submit (to preserve colored cards)
+                    if (!this.justSubmitted) {
+                        this.ui.renderHand(this.state.hand, this.state.selectedCards, this.onCardSelect.bind(this));
+                    }
                 }
             } else if (data.phase === 'judging') {
+                // Clear justSubmitted flag when entering judging phase
+                this.justSubmitted = false;
                 if (phaseIndicator) phaseIndicator.textContent = isCzar ? 'Pick the winner!' : 'Czar is judging...';
                 if (submissionsSection) submissionsSection.style.display = 'block';
                 if (data.submissions && data.submissions.length > 0) {
