@@ -57,23 +57,45 @@
       </div>
 
       <div class="game-settings" id="gameSettingsSection" style="display: none;">
-        <h3>Game Settings</h3>
-        <div class="pack-selection">
-          <label>Select Card Packs:</label>
-          <div id="packList" class="pack-list">
-            <!-- Packs will be rendered here -->
-          </div>
-        </div>
+        <h3>⚙️ Game Settings</h3>
 
-        <div class="timer-settings">
-          <label class="toggle-switch">
-            <input type="checkbox" id="timerToggle">
-            <span class="slider"></span>
-            Round Timer
-          </label>
-          <div id="timerDurationContainer" class="timer-duration-container" style="display: none;">
-            <input type="number" id="timerDurationInput" value="40" min="10" max="120" step="5">
-            <span>seconds</span>
+        <div class="settings-grid">
+          <!-- Left Column: Packs -->
+          <div class="settings-column main-settings">
+            <div class="setting-group">
+              <label>🎴 Card Packs</label>
+              <div id="packList" class="pack-list">
+                <!-- Packs will be rendered here -->
+              </div>
+              <div id="deckInfo" class="deck-info" style="display: none;">
+                <!-- Deck stats will be shown here -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Rules & Timer -->
+          <div class="settings-column side-settings">
+            <div class="setting-group">
+              <label for="winningScoreInput">🏆 Points to Win</label>
+              <div class="stepper-input">
+                <input type="number" id="winningScoreInput" min="1" max="50" value="7">
+                <span class="input-hint">Target Score</span>
+              </div>
+            </div>
+
+            <div class="setting-group">
+              <label class="toggle-switch">
+                <input type="checkbox" id="timerToggle">
+                <span class="slider"></span>
+                ⏱️ Round Timer
+              </label>
+              <div id="timerDurationContainer" class="timer-duration-container" style="display: none;">
+                <div class="stepper-input small">
+                  <input type="number" id="timerDurationInput" value="40" min="10" max="120" step="5">
+                  <span class="input-hint">Seconds</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

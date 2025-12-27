@@ -272,13 +272,46 @@ export class UIRenderer {
 
             const label = document.createElement('label');
             label.htmlFor = `pack-${pack.id}`;
-            label.textContent = pack.name;
+            const packIcon = pack.id.startsWith('deck_') ? '📁 ' : '📦 ';
+            label.textContent = packIcon + pack.name;
             label.style.cursor = isHost ? 'pointer' : 'default';
 
             div.appendChild(checkbox);
             div.appendChild(label);
             container.appendChild(div);
         });
+
+        // Add Deck Info
+        if (this.elements.deckInfo && selectedIds.length > 0) {
+            this.elements.deckInfo.style.display = 'block';
+            const blackCount = packs
+                .filter(p => selectedIds.includes(p.id))
+                .reduce((sum, p) => sum + (p.blackCount || (p.black ? p.black.length : 0) || 0), 0);
+            const whiteCount = packs
+                .filter(p => selectedIds.includes(p.id))
+                .reduce((sum, p) => sum + (p.whiteCount || (p.white ? p.white.length : 0) || 0), 0);
+
+            this.elements.deckInfo.innerHTML = `
+                <span>📊</span>
+                <div>
+                    <strong>Total Loaded:</strong> ${blackCount} Black / ${whiteCount} White
+                </div>
+            `;
+        } else if (this.elements.deckInfo) {
+            this.elements.deckInfo.style.display = 'none';
+        }
+    }
+
+    renderWinningScore(score, isHost, onScoreChange) {
+        const input = this.elements.winningScoreInput;
+        if (!input) return;
+
+        input.value = score;
+        input.disabled = !isHost;
+
+        if (isHost) {
+            input.onchange = () => onScoreChange(input.value);
+        }
     }
 
     renderTimerSettings(isEnabled, duration, isHost, onToggle, onDurationChange) {

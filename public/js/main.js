@@ -7,7 +7,7 @@ import { UIRenderer } from './ui/renderer.js';
 import { GameState } from './game/state.js';
 import { STORAGE_KEYS } from '../constants.js';
 
-class App {
+export class App {
     constructor() {
         this.ui = new UIRenderer();
         this.state = new GameState();
@@ -239,6 +239,8 @@ class App {
         this.ui.updatePlayerList(data.players, myId);
 
         if (data.phase === 'lobby') {
+            const settingsSection = document.getElementById('gameSettingsSection');
+            if (settingsSection) settingsSection.style.display = 'block';
 
             // Render pack selection
             if (data.availablePacks && data.selectedPacks) {
@@ -250,10 +252,17 @@ class App {
                 );
             }
 
-            // Render timer settings
+            // Render Winning Score
+            this.ui.renderWinningScore(
+                data.winningScore || 7,
+                this.isHost,
+                (newScore) => this.updateWinningScore(newScore)
+            );
+
+            // Render Timer Settings
             this.ui.renderTimerSettings(
-                data.timerEnabled || false,
-                data.timerDuration || 40,
+                data.timerEnabled,
+                data.timerDuration,
                 this.isHost,
                 (enabled) => this.onToggleTimer(enabled),
                 (duration) => this.onTimerDurationChange(duration)
@@ -351,6 +360,12 @@ class App {
         }
 
         this.socket.emit('updateGameSettings', { packs: newPacks }, (res) => {
+            if (!res.success) this.ui.showError(res.message);
+        });
+    }
+
+    updateWinningScore(score) {
+        this.socket.emit('updateGameSettings', { winningScore: score }, (res) => {
             if (!res.success) this.ui.showError(res.message);
         });
     }

@@ -20,6 +20,7 @@ class GameEngine {
         this.discardedWhiteCards = [];
         this.currentRound = 0;
         this.phase = 'lobby'; // lobby, playing, judging, roundEnd, gameOver
+        this.winningScore = config.WINNING_SCORE || 7;
         this.finalWinner = null;
         this.finalLeaderboard = null;
         this.timerEnabled = false;
@@ -417,7 +418,7 @@ class GameEngine {
             this.phase = 'roundEnd';
 
             // Check for game winner
-            if (winner.score >= config.WINNING_SCORE) {
+            if (winner.score >= this.winningScore) {
                 this.endGame(winner);
                 return { success: true, gameOver: true, winner: this.finalWinner, leaderboard: this.finalLeaderboard };
             }
@@ -494,14 +495,17 @@ class GameEngine {
             roundWinner: this.roundWinner,
             submissionCount: this.submissions.size,
             submissions: (this.phase === 'judging' || this.phase === 'roundEnd') ? this.getSubmissions() : [],
-            selectedPacks: this.selectedPacks,
-            availablePacks: this.getAvailablePacks(),
             winner: this.finalWinner,
             leaderboard: this.finalLeaderboard,
+            winningScore: this.winningScore,
+            blackCardsRemaining: this.blackCardDeck.length,
+            totalBlackCards: this.blackCardDeck.length + (this.currentBlackCard ? 1 : 0), // Basic stat for lobby
             timerEnabled: this.timerEnabled,
             timerDuration: this.timerDuration,
             timerRemaining: this.timerRemaining,
-            timerRunning: this.timerRunning
+            timerRunning: this.timerRunning,
+            availablePacks: this.getAvailablePacks(),
+            selectedPacks: this.selectedPacks
         };
     }
 
@@ -546,6 +550,9 @@ class GameEngine {
         }
         if (settings.timerDuration !== undefined) {
             this.timerDuration = parseInt(settings.timerDuration) || 40;
+        }
+        if (settings.winningScore !== undefined) {
+            this.winningScore = parseInt(settings.winningScore) || 7;
         }
         return { success: true };
     }
